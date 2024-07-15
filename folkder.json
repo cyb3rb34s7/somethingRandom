@@ -1,0 +1,20 @@
+src/main/java/com/example/usermanagement/
+├── controller/
+│   └── UserHistoryController.java
+├── dto/
+│   ├── UserHistoryRequestDTO.java
+│   └── UserHistoryResponseDTO.java
+├── exception/
+│   ├── GlobalExceptionHandler.java
+│   └── InvalidActionException.java
+├── mapper/
+│   └── UserHistoryMapper.java
+├── model/
+│   └── UserHistory.java
+└── service/
+    ├── UserHistoryService.java
+    └── UserHistoryServiceImpl.java
+
+src/main/resources/
+└── mapper/
+    └── UserHistoryMapper.xml

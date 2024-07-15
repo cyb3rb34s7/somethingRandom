@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.usermanagement.mapper.UserHistoryMapper">
+    <insert id="batchInsertUserHistory" parameterType="java.util.List">
+        INSERT INTO user_history (user_id, username, upd_by_id, action_id, action_name, change_date_time, change)
+        VALUES 
+        <foreach collection="histories" item="history" separator=",">
+            (#{history.userId}, #{history.username}, #{history.updById}, #{history.actionId}, 
+             #{history.actionName}, #{history.changeDateTime}, #{history.change}::jsonb)
+        </foreach>
+    </insert>
+
+    <select id="getUserHistory" resultType="com.example.usermanagement.model.UserHistory">
+        SELECT 
+            uh.user_id as userId,
+            uh.username,
+            uh.change_date_time as changeDateTime,
+            uh.upd_by_id as updById,
+            uh.action_id as actionId,
+            uh.action_name as actionName,
+            u.role as currentRole,
+            u.status as currentStatus,
+            uh.change
+        FROM 
+            user_history uh
+        JOIN 
+            users u ON uh.user_id = u.id
+        WHERE 
+            uh.user_id = #{userId}
+        ORDER BY 
+            ${sortCol} ${sortOrder}
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="getActionName" resultType="string">
+        SELECT action_name FROM action_master WHERE id = #{actionId}
+    </select>
+</mapper>
