@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.usermanagement.mapper.UserHistoryMapper">
-    <select id="searchUserHistory" resultType="com.example.usermanagement.model.UserHistory">
-        SELECT uh.*, u.role as currentRole, u.status as currentStatus
-        FROM user_history uh
-        JOIN users u ON uh.user_id = u.id
+    <select id="searchUserHistory" resultType="com.example.usermanagement.dto.UserHistoryResponseDTO">
+        SELECT 
+            uh.user_id as userId,
+            uh.change_date_time as changeDateTime,
+            uh.upd_by_id as updById,
+            rm.role_name as currentRole,
+            au.status as currentStatus,
+            uh.change
+        FROM 
+            user_history uh
+        INNER JOIN 
+            users u ON uh.user_id = u.id
+        INNER JOIN 
+            role_master rm ON u.role_id = rm.role_id
+        INNER JOIN 
+            admin_users au ON u.id = au.user_id
         <where>
             <foreach collection="searchRequest.filters" item="filter" separator="AND">
                 <choose>
