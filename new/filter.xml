@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.usermanagement.mapper.UserHistoryMapper">
+    <select id="searchUserHistory" resultType="com.example.usermanagement.model.UserHistory">
+        SELECT uh.*, u.role as currentRole, u.status as currentStatus
+        FROM user_history uh
+        JOIN users u ON uh.user_id = u.id
+        <where>
+            <foreach collection="searchRequest.filters" item="filter" separator="AND">
+                <choose>
+                    <when test="filter.type == 'search'">
+                        ${filter.key} LIKE CONCAT('%', #{filter.values[0]}, '%')
+                    </when>
+                    <when test="filter.type == 'filter'">
+                        ${filter.key} IN
+                        <foreach item="value" collection="filter.values" open="(" separator="," close=")">
+                            #{value}
+                        </foreach>
+                    </when>
+                </choose>
+            </foreach>
+        </where>
+        ORDER BY ${searchRequest.sortBy.field} ${searchRequest.sortBy.order}
+        LIMIT #{searchRequest.pagination.limit} OFFSET #{searchRequest.pagination.offset}
+    </select>
+</mapper>
