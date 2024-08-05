@@ -1,0 +1,24 @@
+.filter-sidebar-container {
+  height: 100vh;
+}
+
+.filter-sidebar {
+  width: 25%;
+  padding: 16px;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-bar {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.apply-button {
+  width: 100%;
+  margin-top: 16px;
+}
