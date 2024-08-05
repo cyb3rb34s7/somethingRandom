@@ -1,0 +1,54 @@
+<mat-drawer-container class="filter-sidebar-container">
+  <mat-drawer #drawer mode="over" position="end" class="filter-sidebar">
+    <div class="sidebar-header">
+      <h2>Filters</h2>
+      <button mat-icon-button (click)="closeDrawer()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    
+    <mat-form-field appearance="outline" class="search-bar">
+      <input matInput placeholder="Search filters">
+    </mat-form-field>
+    
+    <mat-accordion>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Date Range</mat-panel-title>
+        </mat-expansion-panel-header>
+        <mat-form-field>
+          <mat-label>Start date</mat-label>
+          <input matInput [matDatepicker]="startPicker">
+          <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>End date</mat-label>
+          <input matInput [matDatepicker]="endPicker">
+          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+        </mat-form-field>
+      </mat-expansion-panel>
+      
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Status</mat-panel-title>
+        </mat-expansion-panel-header>
+        <!-- Add status filter options here -->
+      </mat-expansion-panel>
+      
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Type</mat-panel-title>
+        </mat-expansion-panel-header>
+        <!-- Add type filter options here -->
+      </mat-expansion-panel>
+    </mat-accordion>
+    
+    <button mat-raised-button color="primary" class="apply-button" (click)="applyFilters()">Apply</button>
+  </mat-drawer>
+  
+  <mat-drawer-content>
+    <!-- Your main content goes here -->
+  </mat-drawer-content>
+</mat-drawer-container>
