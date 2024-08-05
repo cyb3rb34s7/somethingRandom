@@ -1,0 +1,45 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: -25%;
+  width: 25%;
+  height: 100%;
+  background-color: white;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s ease-out;
+  z-index: 1001;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.sidebar.open {
+  right: 0;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.search-bar {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.apply-button {
+  width: 100%;
+  margin-top: 16px;
+}
