@@ -1,0 +1,26 @@
+<div class="overlay" @if="isOpen" (click)="close()"></div>
+<div class="sidebar" [class.open]="isOpen">
+  <div class="sidebar-header">
+    <h2>Filters</h2>
+    <button mat-icon-button (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-accordion>
+    @for (filterGroup of allFiltersList$ | async | keyvalue; track filterGroup.key) {
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>{{ filterGroup.key }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <mat-selection-list (selectionChange)="updateAppliedFilter(filterGroup.key, $event.source.selectedOptions.selected.map(item => item.value))">
+          @for (option of filterGroup.value; track option) {
+            <mat-list-option [value]="option">{{ option }}</mat-list-option>
+          }
+        </mat-selection-list>
+      </mat-expansion-panel>
+    }
+  </mat-accordion>
+
+  <button mat-raised-button color="primary" class="apply-button" (click)="applyFilters()">Apply</button>
+</div>
