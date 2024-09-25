@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yourpackage.mapper.MovieReplicaMapper">
+    <insert id="upsertMovieBatch" parameterType="java.util.List">
+        INSERT INTO movie_replica (
+            movie_id, title, type, provider_name, release_date, expiry_date, status, updated_by, last_updated
+        ) VALUES 
+        <foreach collection="movies" item="movie" separator=",">
+            (#{movie.movieId}, #{movie.title}, #{movie.type}, #{movie.providerName}, 
+             #{movie.releaseDate}, #{movie.expiryDate}, #{movie.status}, #{movie.updatedBy}, #{movie.lastUpdated})
+        </foreach>
+        ON CONFLICT (movie_id) DO UPDATE SET
+            title = EXCLUDED.title,
+            type = EXCLUDED.type,
+            provider_name = EXCLUDED.provider_name,
+            release_date = EXCLUDED.release_date,
+            expiry_date = EXCLUDED.expiry_date,
+            status = EXCLUDED.status,
+            updated_by = EXCLUDED.updated_by,
+            last_updated = EXCLUDED.last_updated
+    </insert>
+</mapper>
