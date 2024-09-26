@@ -3,7 +3,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule, ReactiveFormsModu
 import { CommonModule } from '@angular/common';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
@@ -71,7 +71,12 @@ import { MatButtonModule } from '@angular/material/button';
       provide: NG_VALUE_ACCESSOR,
       useExisting: forwardRef(() => ModernDateTimePickerComponent),
       multi: true
-    }
+    },
+    MatDatepickerModule,
+    MatNativeDateModule,
+    { provide: DateAdapter, useClass: DateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: MAT_DATE_FORMATS },
+    { provide: MAT_DATE_LOCALE, useValue: 'en-US' }
   ]
 })
 export class ModernDateTimePickerComponent implements ControlValueAccessor, OnInit {
