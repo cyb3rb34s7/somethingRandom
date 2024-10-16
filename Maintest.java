@@ -5,7 +5,7 @@ import org.springframework.context.ApplicationContext;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class MyApplicationTests {
+class CmsHistoryApplicationTests {
 
     @Test
     void contextLoads(ApplicationContext context) {
@@ -14,16 +14,12 @@ class MyApplicationTests {
 
     @Test
     void mainMethodDoesNotThrowException() {
-        assertThat(invokeMain(MyApplication.class)).doesNotThrowAnyException();
-    }
-
-    private static Runnable invokeMain(Class<?> clazz) {
-        return () -> {
+        assertThat(() -> {
             try {
-                clazz.getMethod("main", String[].class).invoke(null, (Object) new String[0]);
+                CmsHistoryApplication.main(new String[]{});
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new AssertionError("Main method threw an exception", e);
             }
-        };
+        }).doesNotThrowAnyException();
     }
 }
