@@ -7,16 +7,16 @@ import java.util.*;
 public class ModelDtoTestUtility {
 
     public static <T> void testModelOrDto(Class<T> clazz) {
+        testConstructors(clazz);
+        testGettersAndSetters(clazz);
+        testEqualsAndHashCode(clazz);
+        testToString(clazz);
+    }
+
+    private static <T> void testConstructors(Class<T> clazz) {
         testNoArgsConstructor(clazz);
         testAllArgsConstructor(clazz);
         testBuilder(clazz);
-        testGettersAndSetters(clazz);
-        if (clazz.isAnnotationPresent(Data.class) || clazz.isAnnotationPresent(EqualsAndHashCode.class)) {
-            testEqualsAndHashCode(clazz);
-        }
-        if (clazz.isAnnotationPresent(Data.class) || clazz.isAnnotationPresent(ToString.class)) {
-            testToString(clazz);
-        }
     }
 
     private static <T> void testNoArgsConstructor(Class<T> clazz) {
@@ -27,12 +27,12 @@ public class ModelDtoTestUtility {
                 Assertions.fail("@NoArgsConstructor is present but no-args constructor is not accessible");
             }
         } catch (Exception e) {
-            // If there's no no-args constructor, that's okay
+            Assertions.fail("Failed to instantiate using no-args constructor: " + e.getMessage());
         }
     }
 
     private static <T> void testAllArgsConstructor(Class<T> clazz) {
-        if (!clazz.isAnnotationPresent(AllArgsConstructor.class)) {
+        if (!clazz.isAnnotationPresent(AllArgsConstructor.class) && !clazz.isAnnotationPresent(Data.class)) {
             return;
         }
         Constructor<?>[] constructors = clazz.getDeclaredConstructors();
@@ -53,13 +53,13 @@ public class ModelDtoTestUtility {
             } catch (Exception e) {
                 Assertions.fail("Failed to instantiate using all-args constructor: " + e.getMessage());
             }
-        } else {
+        } else if (clazz.isAnnotationPresent(AllArgsConstructor.class)) {
             Assertions.fail("@AllArgsConstructor is present but all-args constructor is not found");
         }
     }
 
     private static <T> void testBuilder(Class<T> clazz) {
-        if (!clazz.isAnnotationPresent(Builder.class)) {
+        if (!clazz.isAnnotationPresent(Builder.class) && !clazz.isAnnotationPresent(Data.class)) {
             return;
         }
         try {
@@ -80,25 +80,18 @@ public class ModelDtoTestUtility {
             Method buildMethod = builder.getClass().getMethod("build");
             Object instance = buildMethod.invoke(builder);
             Assertions.assertNotNull(instance);
+        } catch (NoSuchMethodException e) {
+            // It's okay if the builder method is not found when only @Data is present
         } catch (Exception e) {
             Assertions.fail("Failed to use builder: " + e.getMessage());
         }
     }
 
     private static <T> void testGettersAndSetters(Class<T> clazz) {
-        Object instance;
-        try {
-            instance = clazz.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            try {
-                Method builderMethod = clazz.getDeclaredMethod("builder");
-                Object builder = builderMethod.invoke(null);
-                Method buildMethod = builder.getClass().getMethod("build");
-                instance = buildMethod.invoke(builder);
-            } catch (Exception ex) {
-                // If we can't create an instance, we can't test getters and setters
-                return;
-            }
+        Object instance = createInstance(clazz);
+        if (instance == null) {
+            Assertions.fail("Failed to create an instance for testing getters and setters");
+            return;
         }
 
         for (Field field : clazz.getDeclaredFields()) {
@@ -115,7 +108,6 @@ public class ModelDtoTestUtility {
                 Object retrievedValue = getter.invoke(instance);
                 Assertions.assertEquals(testValue, retrievedValue);
                 
-                // Test null value for non-primitive types
                 if (!field.getType().isPrimitive()) {
                     setter.invoke(instance, (Object) null);
                     retrievedValue = getter.invoke(instance);
@@ -130,10 +122,19 @@ public class ModelDtoTestUtility {
     }
 
     private static <T> void testEqualsAndHashCode(Class<T> clazz) {
+        if (!clazz.isAnnotationPresent(Data.class) && !clazz.isAnnotationPresent(EqualsAndHashCode.class)) {
+            return;
+        }
+        
         try {
-            T instance1 = clazz.getDeclaredConstructor().newInstance();
-            T instance2 = clazz.getDeclaredConstructor().newInstance();
+            T instance1 = createInstance(clazz);
+            T instance2 = createInstance(clazz);
             
+            if (instance1 == null || instance2 == null) {
+                Assertions.fail("Failed to create instances for testing equals and hashCode");
+                return;
+            }
+
             // Test reflexivity
             Assertions.assertEquals(instance1, instance1);
             
@@ -156,6 +157,7 @@ public class ModelDtoTestUtility {
                 Object differentValue = createDifferentDummyValue(field.getType());
                 field.set(instance2, differentValue);
                 Assertions.assertNotEquals(instance1, instance2, "Instances should not be equal when " + field.getName() + " is different");
+                Assertions.assertNotEquals(instance1.hashCode(), instance2.hashCode(), "HashCodes should not be equal when " + field.getName() + " is different");
                 field.set(instance2, field.get(instance1)); // Reset for next iteration
             }
         } catch (Exception e) {
@@ -164,14 +166,45 @@ public class ModelDtoTestUtility {
     }
 
     private static <T> void testToString(Class<T> clazz) {
+        if (!clazz.isAnnotationPresent(Data.class) && !clazz.isAnnotationPresent(ToString.class)) {
+            return;
+        }
+
         try {
-            T instance = clazz.getDeclaredConstructor().newInstance();
+            T instance = createInstance(clazz);
+            if (instance == null) {
+                Assertions.fail("Failed to create an instance for testing toString");
+                return;
+            }
+
             String toString = instance.toString();
             Assertions.assertNotNull(toString);
             Assertions.assertFalse(toString.isEmpty());
-            // We won't check for field names in toString as implementations may vary
+            
+            // Check that toString contains class name
+            Assertions.assertTrue(toString.contains(clazz.getSimpleName()));
+
+            // Check that toString contains each field name
+            for (Field field : clazz.getDeclaredFields()) {
+                Assertions.assertTrue(toString.contains(field.getName()), "toString should contain field name: " + field.getName());
+            }
         } catch (Exception e) {
             Assertions.fail("Failed to test toString: " + e.getMessage());
+        }
+    }
+
+    private static <T> T createInstance(Class<T> clazz) {
+        try {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            try {
+                Method builderMethod = clazz.getDeclaredMethod("builder");
+                Object builder = builderMethod.invoke(null);
+                Method buildMethod = builder.getClass().getMethod("build");
+                return (T) buildMethod.invoke(builder);
+            } catch (Exception ex) {
+                return null;
+            }
         }
     }
 
@@ -214,7 +247,6 @@ public class ModelDtoTestUtility {
             Object[] constants = type.getEnumConstants();
             return constants.length > 1 ? constants[1] : constants[0];
         }
-        // For other types, we'll return a different instance or null
         return createDummyValue(type);
     }
 
