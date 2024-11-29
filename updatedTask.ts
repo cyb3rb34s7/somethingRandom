@@ -163,4 +163,149 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MetadataHistoryService, MetadataHistoryChange } from './metadata-history.service';
 
 @Component({
-  selector: 'app
+  selector: 'app-metadata-history',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div style="
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffffff;
+    ">
+      <div *ngFor="let change of processedChanges" style="
+        margin-bottom: 25px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+      ">
+        <div style="
+          font-weight: 600;
+          font-size: 16px;
+          color: #343a40;
+          padding: 15px;
+          background-color: #e9ecef;
+          border-bottom: 1px solid #dee2e6;
+        ">
+          {{ change.field }}
+        </div>
+        <div style="
+          display: flex;
+          gap: 20px;
+          padding: 15px;
+        ">
+          <div style="flex: 1;">
+            <div style="
+              color: #6c757d;
+              font-size: 14px;
+              margin-bottom: 10px;
+              font-weight: 500;
+            ">
+              Old Value
+            </div>
+            <ng-container *ngIf="isComplexValue(change.oldVal); else stringValue">
+              <div [innerHTML]="formatValue(change.oldVal)"></div>
+            </ng-container>
+            <ng-template #stringValue>
+              <div style="
+                background-color: #f1f3f5;
+                padding: 10px 15px;
+                border-radius: 6px;
+                color: #343a40;
+                font-size: 14px;
+              ">
+                {{ formatValue(change.oldVal) }}
+              </div>
+            </ng-template>
+          </div>
+          <div style="flex: 1;">
+            <div style="
+              color: #6c757d;
+              font-size: 14px;
+              margin-bottom: 10px;
+              font-weight: 500;
+            ">
+              New Value
+            </div>
+            <ng-container *ngIf="isComplexValue(change.newVal); else stringNewValue">
+              <div [innerHTML]="formatValue(change.newVal)"></div>
+            </ng-container>
+            <ng-template #stringNewValue>
+              <div style="
+                background-color: #f1f3f5;
+                padding: 10px 15px;
+                border-radius: 6px;
+                color: #343a40;
+                font-size: 14px;
+              ">
+                {{ formatValue(change.newVal) }}
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class MetadataHistoryComponent implements OnInit {
+  @Input() changesStr = '';
+  processedChanges: MetadataHistoryChange[] = [];
+
+  constructor(
+    private metadataHistoryService: MetadataHistoryService,
+    private sanitizer: DomSanitizer
+  ) {}
+
+  ngOnInit() {
+    this.processedChanges = this.metadataHistoryService.prepareExpandedRows(this.changesStr);
+  }
+
+  formatValue(value: string | number | DynamicObject[]): SafeHtml | string {
+    return this.metadataHistoryService.formatValueForUI(value);
+  }
+
+  isComplexValue(value: string | number | DynamicObject[]): boolean {
+    return Array.isArray(value) && value.length > 0;
+  }
+}
+
+// Example usage component
+@Component({
+  selector: 'app-example',
+  standalone: true,
+  imports: [MetadataHistoryComponent],
+  template: `
+    <app-metadata-history 
+      [changesStr]="exampleChangesStr">
+    </app-metadata-history>
+  `
+})
+export class ExampleComponent {
+  exampleChangesStr = JSON.stringify([
+    {
+      field: 'External Provider',
+      oldVal: [
+        { id: '123', type: 'Service', provider: 'Old Provider' }
+      ],
+      newVal: [
+        { id: '456', type: 'Platform', provider: 'New Provider' }
+      ]
+    },
+    {
+      field: 'Cast',
+      oldVal: [
+        { name: 'John Doe', role: 'Lead', characterName: 'Hero' },
+        { name: 'Jane Smith', role: 'Support', characterName: 'Sidekick' }
+      ],
+      newVal: [
+        { name: 'Mike Johnson', role: 'Guest', characterName: 'Antagonist' }
+      ]
+    },
+    {
+      field: 'Age',
+      oldVal: 25,
+      newVal: 26
+    }
+  ]);
+}
