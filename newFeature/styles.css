@@ -1,0 +1,121 @@
+/* metadata-history.component.css */
+.history-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff;
+}
+
+.history-item {
+  margin: 20px 0;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.history-field {
+  font-weight: 600;
+  font-size: 16px;
+  color: #343a40;
+  padding: 15px;
+  background-color: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.history-values {
+  display: flex;
+  gap: 20px;
+  padding: 15px;
+}
+
+.history-value-section {
+  flex: 1;
+}
+
+.value-label {
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.simple-value {
+  background-color: #f1f3f5;
+  padding: 10px 15px;
+  border-radius: 6px;
+  color: #343a40;
+  font-size: 14px;
+}
+
+/* Table Styles */
+.modern-table-container {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+  margin: 10px 0;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  table-layout: fixed;
+}
+
+.modern-table th {
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  font-size: 12px;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  border-right: 1px solid #e9ecef;
+}
+
+.modern-table td {
+  padding: 12px 15px;
+  color: #343a40;
+  font-size: 14px;
+  border-right: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modern-table th:last-child,
+.modern-table td:last-child {
+  border-right: none;
+}
+
+.modern-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.modern-table tr:hover {
+  background-color: #f1f3f5;
+}
+
+/* Tooltip styles */
+.cell-with-tooltip {
+  position: relative;
+}
+
+.cell-with-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  background: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: normal;
+  max-width: 300px;
+  z-index: 1000;
+}
