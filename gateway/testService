@@ -1,0 +1,37 @@
+// TestServiceApplication.java
+package com.example.testservice;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.*;
+
+@SpringBootApplication
+public class TestServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(TestServiceApplication.class, args);
+    }
+}
+
+@RestController
+@RequestMapping("/api/test")
+class TestController {
+    
+    @GetMapping("/hello")
+    public String hello() {
+        return "Hello from Test Service!";
+    }
+    
+    @PostMapping("/echo")
+    public String echo(@RequestBody(required = false) String body) {
+        return "Received: " + body;
+    }
+    
+    @GetMapping("/slow")
+    public String slow() throws InterruptedException {
+        Thread.sleep(2000); // Simulate slow response
+        return "Slow response";
+    }
+}
+
+// application.properties
+server.port=8081
