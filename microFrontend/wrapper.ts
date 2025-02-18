@@ -1,9 +1,13 @@
 // src/app/components/react-wrapper/react-wrapper.component.ts
 import { Component, OnInit, ElementRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { loadRemoteModule } from '@angular-architects/module-federation';
+import type { FC } from 'react';
 
 @Component({
   selector: 'app-react-wrapper',
+  standalone: true,
+  imports: [CommonModule],
   template: '<div #reactContainer></div>'
 })
 export class ReactWrapperComponent implements OnInit {
@@ -20,8 +24,10 @@ export class ReactWrapperComponent implements OnInit {
       const React = await import('react');
       const ReactDOM = await import('react-dom');
 
-      ReactDOM.render(
-        React.createElement(ReactApp.default),
+      const App = ReactApp.default as FC;
+      
+      ReactDOM.default.render(
+        React.default.createElement(App),
         this.elementRef.nativeElement.querySelector('div')
       );
     } catch (error) {
@@ -32,8 +38,9 @@ export class ReactWrapperComponent implements OnInit {
   ngOnDestroy() {
     const container = this.elementRef.nativeElement.querySelector('div');
     if (container) {
-      const ReactDOM = require('react-dom');
-      ReactDOM.unmountComponentAtNode(container);
+      import('react-dom').then(ReactDOM => {
+        ReactDOM.default.unmountComponentAtNode(container);
+      });
     }
   }
 }
