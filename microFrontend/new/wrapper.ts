@@ -20,9 +20,13 @@ export class ReactWrapperComponent implements OnInit, OnDestroy {
     this.reactRoot = this.elementRef.nativeElement.querySelector('div') as HTMLElement;
     
     try {
-      const React = await import('react');
-      const ReactDOM = await import('react-dom/client');
-      const RemoteApp = await import('react-app/App');
+      // Use dynamic import with the full module specifier
+      const [React, ReactDOM, RemoteApp] = await Promise.all([
+        import('react'),
+        import('react-dom/client'),
+        // Changed this line to use dynamic import
+        (window as any)['react_app'].get('./App').then((factory: any) => factory())
+      ]);
 
       const AppComponent = RemoteApp.default as ComponentType<any>;
       
