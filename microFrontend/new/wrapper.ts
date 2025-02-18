@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { loadRemoteModule } from '@angular-architects/module-federation';
 import type { ComponentType } from 'react';
 import type * as ReactDOM from 'react-dom/client';
 
@@ -20,23 +21,27 @@ export class ReactWrapperComponent implements OnInit, OnDestroy {
     this.reactRoot = this.elementRef.nativeElement.querySelector('div') as HTMLElement;
     
     try {
-      // Use dynamic import with the full module specifier
-      const [React, ReactDOM, RemoteApp] = await Promise.all([
+      const [React, { createRoot }, RemoteApp] = await Promise.all([
         import('react'),
         import('react-dom/client'),
-        // Changed this line to use dynamic import
-        (window as any)['react_app'].get('./App').then((factory: any) => factory())
+        loadRemoteModule({
+          type: 'module',
+          remoteEntry: 'http://localhost:5173/assets/remoteEntry.js',
+          exposedModule: './App'
+        })
       ]);
 
       const AppComponent = RemoteApp.default as ComponentType<any>;
-      
       if (this.reactRoot) {
-        this.root = ReactDOM.createRoot(this.reactRoot);
+        this.root = createRoot(this.reactRoot);
         this.root.render(React.createElement(AppComponent));
       }
     } catch (error) {
       console.error('Failed to load React application:', error);
-      console.error('Detailed error:', error instanceof Error ? error.stack : error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Stack:', error.stack);
+      }
     }
   }
 
