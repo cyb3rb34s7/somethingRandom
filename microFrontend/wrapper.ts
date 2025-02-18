@@ -27,7 +27,6 @@ export class ReactWrapperComponent implements OnInit, OnDestroy {
         loadRemoteModule({
           type: 'module',
           remoteEntry: 'http://localhost:5173/assets/remoteEntry.js',
-          remoteName: 'react_app',
           exposedModule: './App'
         })
       ]);
