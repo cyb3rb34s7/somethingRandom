@@ -32,7 +32,8 @@ export default defineConfig({
     cssCodeSplit: false,
     rollupOptions: {
       output: {
-        format: 'esm'
+        format: 'esm',
+        assetFileNames: 'assets/[name][extname]'
       }
     }
   },
@@ -42,5 +43,6 @@ export default defineConfig({
     headers: {
       "Access-Control-Allow-Origin": "*"
     }
-  }
+  },
+  base: 'http://localhost:5173/' // Add this line
 });
