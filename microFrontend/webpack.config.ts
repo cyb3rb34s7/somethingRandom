@@ -25,17 +25,17 @@ const config: Configuration = {
         'react-app': 'http://localhost:5173/assets/remoteEntry.js'
       },
       shared: {
-        '@angular/core': { singleton: true, eager: true },
-        '@angular/common': { singleton: true, eager: true },
         react: { 
           singleton: true,
           eager: true,
-          requiredVersion: false
+          requiredVersion: false,
+          strictVersion: false
         },
         'react-dom': { 
           singleton: true,
           eager: true,
-          requiredVersion: false
+          requiredVersion: false,
+          strictVersion: false
         }
       }
     })
