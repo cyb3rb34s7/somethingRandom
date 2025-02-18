@@ -11,35 +11,24 @@ const { ModuleFederationPlugin } = container;
 const config: Configuration = {
   output: {
     publicPath: 'auto',
-    uniqueName: 'tvplus-cms',
+    uniqueName: 'tvplus-cms'
   },
   experiments: {
-    topLevelAwait: true,
+    topLevelAwait: true
   },
   plugins: [
     new ModuleFederationPlugin({
       name: 'tvplus-cms',
-      filename: 'remoteEntry.js',
       remotes: {
-        'react-app': `promise new Promise(resolve => {
-          const script = document.createElement('script')
-          script.src = 'http://localhost:5173/assets/remoteEntry.js'
-          script.onload = () => {
-            const module = window['react_app']
-            resolve(module)
-          }
-          document.head.appendChild(script)
-        })`
+        'react-app': `http://localhost:5173/assets/remoteEntry.js`
       },
       shared: {
         react: { 
           singleton: true,
-          eager: true,
           requiredVersion: false
         },
         'react-dom': { 
           singleton: true,
-          eager: true,
           requiredVersion: false
         }
       }
