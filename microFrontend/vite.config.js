@@ -6,33 +6,33 @@ export default defineConfig({
   plugins: [
     react(),
     federation({
-      name: 'react-app',
+      name: 'react_app',
       filename: 'remoteEntry.js',
       exposes: {
         './App': './src/App'
       },
-      shared: {
-        react: {
-          singleton: true,
-          requiredVersion: false
-        },
-        'react-dom': {
-          singleton: true,
-          requiredVersion: false
-        }
-      }
+      shared: ['react', 'react-dom']
     })
   ],
   build: {
-    modulePreload: false,
     target: 'esnext',
+    modulePreload: false,
     minify: false,
-    cssCodeSplit: false
+    cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        format: 'esm',
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name].js'
+      }
+    }
   },
-  server: {
-    origin: 'http://localhost:5173',
-    cors: true,
+  preview: {
+    port: 5173,
     strictPort: true,
-    port: 5173
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/javascript"
+    }
   }
-})
+});
