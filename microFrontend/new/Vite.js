@@ -13,12 +13,10 @@ export default defineConfig({
       },
       shared: {
         react: { 
-          singleton: true,
-          eager: true
+          singleton: true
         },
         'react-dom': {
-          singleton: true,
-          eager: true
+          singleton: true
         }
       }
     })
@@ -27,22 +25,13 @@ export default defineConfig({
     modulePreload: false,
     target: 'esnext',
     minify: false,
-    cssCodeSplit: false,
-    rollupOptions: {
-      output: {
-        format: 'esm',
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name].js'
-      }
-    }
+    cssCodeSplit: false
   },
   preview: {
     port: 5173,
     strictPort: true,
     headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Content-Type": "application/javascript"
+      "Access-Control-Allow-Origin": "*"
     }
-  },
-  base: 'http://localhost:5173/'
+  }
 });
