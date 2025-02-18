@@ -11,7 +11,18 @@ export default defineConfig({
       exposes: {
         './App': './src/App'
       },
-      shared: ['react', 'react-dom']
+      shared: {
+        react: { 
+          singleton: true,
+          eager: true,
+          requiredVersion: false
+        },
+        'react-dom': {
+          singleton: true,
+          eager: true,
+          requiredVersion: false
+        }
+      }
     })
   ],
   build: {
@@ -21,9 +32,7 @@ export default defineConfig({
     cssCodeSplit: false,
     rollupOptions: {
       output: {
-        format: 'esm',
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name].js'
+        format: 'esm'
       }
     }
   },
@@ -31,8 +40,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Content-Type": "application/javascript"
+      "Access-Control-Allow-Origin": "*"
     }
   }
 });
