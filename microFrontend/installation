@@ -1,0 +1,4 @@
+cd cms-frontend
+npm install @angular-architects/module-federation webpack webpack-dev-server @types/webpack
+npm install react react-dom
+npm install --save-dev @types/react @types/react-dom
