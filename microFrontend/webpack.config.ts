@@ -22,17 +22,19 @@ const config: Configuration = {
     new ModuleFederationPlugin({
       name: 'tvplus-cms',
       remotes: {
-        reactApp: `promise import('http://localhost:5173/assets/remoteEntry.js')`
+        'react-app': 'http://localhost:5173/assets/remoteEntry.js'
       },
       shared: {
+        '@angular/core': { singleton: true, eager: true },
+        '@angular/common': { singleton: true, eager: true },
         react: { 
           singleton: true,
-          strictVersion: false,
+          eager: true,
           requiredVersion: false
         },
         'react-dom': { 
           singleton: true,
-          strictVersion: false,
+          eager: true,
           requiredVersion: false
         }
       }
