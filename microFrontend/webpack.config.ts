@@ -1,5 +1,6 @@
 import { Configuration } from 'webpack';
-import { ModuleFederationPlugin } from 'webpack/lib/container/ModuleFederationPlugin';
+import { container } from 'webpack';
+const { ModuleFederationPlugin } = container;
 
 export default {
   output: {
