@@ -6,13 +6,6 @@ import type { ComponentType } from 'react';
 import type * as ReactDOM from 'react-dom/client';
 import type * as React from 'react';
 
-declare global {
-  interface Window {
-    React: typeof React;
-    ReactDOM: typeof ReactDOM;
-  }
-}
-
 @Component({
   selector: 'app-react-wrapper',
   standalone: true,
@@ -35,7 +28,7 @@ export class ReactWrapperComponent implements OnInit, OnDestroy {
         import('react'),
         import('react-dom/client'),
         loadRemoteModule({
-          remoteEntry: 'http://localhost:5173/assets/remoteEntry.js',
+          remoteEntry: 'http://localhost:5173/remoteEntry.js', // Updated URL
           remoteName: 'react-app',
           exposedModule: './App'
         })
@@ -53,7 +46,6 @@ export class ReactWrapperComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Properly cleanup React root
     if (this.root) {
       this.root.unmount();
     }
