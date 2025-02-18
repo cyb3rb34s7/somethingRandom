@@ -1,46 +1,61 @@
 // src/app/components/react-wrapper/react-wrapper.component.ts
-import { Component, OnInit, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { loadRemoteModule } from '@angular-architects/module-federation';
-import type { FC } from 'react';
+import type { ComponentType } from 'react';
+
+declare global {
+  interface Window {
+    React: typeof import('react');
+    ReactDOM: typeof import('react-dom');
+  }
+}
 
 @Component({
   selector: 'app-react-wrapper',
   standalone: true,
   imports: [CommonModule],
-  template: '<div #reactContainer></div>'
+  template: '<div #reactContainer></div>',
+  styles: [':host { display: block; }']
 })
-export class ReactWrapperComponent implements OnInit {
-  constructor(private elementRef: ElementRef) {}
+export class ReactWrapperComponent implements OnInit, OnDestroy {
+  private reactRoot?: HTMLElement;
 
-  async ngOnInit() {
+  constructor(private elementRef: ElementRef<HTMLElement>) {}
+
+  async ngOnInit(): Promise<void> {
+    this.reactRoot = this.elementRef.nativeElement.querySelector('div') as HTMLElement;
+    
     try {
-      const ReactApp = await loadRemoteModule({
-        remoteEntry: 'http://localhost:5173/assets/remoteEntry.js',
-        remoteName: 'react-app',
-        exposedModule: './App'
-      });
+      // Load React and ReactDOM
+      const [React, ReactDOM, RemoteApp] = await Promise.all([
+        import('react') as Promise<typeof import('react')>,
+        import('react-dom') as Promise<typeof import('react-dom')>,
+        loadRemoteModule({
+          remoteEntry: 'http://localhost:5173/assets/remoteEntry.js',
+          remoteName: 'react-app',
+          exposedModule: './App'
+        })
+      ]);
 
-      const React = await import('react');
-      const ReactDOM = await import('react-dom');
+      // Store React and ReactDOM on window to avoid multiple instances
+      window.React = React;
+      window.ReactDOM = ReactDOM;
 
-      const App = ReactApp.default as FC;
+      const AppComponent = RemoteApp.default as ComponentType<any>;
       
       ReactDOM.default.render(
-        React.default.createElement(App),
-        this.elementRef.nativeElement.querySelector('div')
+        React.default.createElement(AppComponent),
+        this.reactRoot
       );
     } catch (error) {
-      console.error('Error loading React app:', error);
+      console.error('Failed to load React application:', error);
     }
   }
 
-  ngOnDestroy() {
-    const container = this.elementRef.nativeElement.querySelector('div');
-    if (container) {
-      import('react-dom').then(ReactDOM => {
-        ReactDOM.default.unmountComponentAtNode(container);
-      });
+  ngOnDestroy(): void {
+    if (this.reactRoot) {
+      window.ReactDOM?.unmountComponentAtNode(this.reactRoot);
     }
   }
 }
