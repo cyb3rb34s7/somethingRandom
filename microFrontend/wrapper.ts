@@ -3,11 +3,13 @@ import { Component, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { loadRemoteModule } from '@angular-architects/module-federation';
 import type { ComponentType } from 'react';
+import type * as ReactDOM from 'react-dom/client';
+import type * as React from 'react';
 
 declare global {
   interface Window {
-    React: typeof import('react');
-    ReactDOM: typeof import('react-dom');
+    React: typeof React;
+    ReactDOM: typeof ReactDOM;
   }
 }
 
@@ -19,6 +21,7 @@ declare global {
   styles: [':host { display: block; }']
 })
 export class ReactWrapperComponent implements OnInit, OnDestroy {
+  private root?: ReactDOM.Root;
   private reactRoot?: HTMLElement;
 
   constructor(private elementRef: ElementRef<HTMLElement>) {}
@@ -28,9 +31,9 @@ export class ReactWrapperComponent implements OnInit, OnDestroy {
     
     try {
       // Load React and ReactDOM
-      const [React, ReactDOM, RemoteApp] = await Promise.all([
-        import('react') as Promise<typeof import('react')>,
-        import('react-dom') as Promise<typeof import('react-dom')>,
+      const [React, { createRoot }, RemoteApp] = await Promise.all([
+        import('react'),
+        import('react-dom/client'),
         loadRemoteModule({
           remoteEntry: 'http://localhost:5173/assets/remoteEntry.js',
           remoteName: 'react-app',
@@ -38,24 +41,21 @@ export class ReactWrapperComponent implements OnInit, OnDestroy {
         })
       ]);
 
-      // Store React and ReactDOM on window to avoid multiple instances
-      window.React = React;
-      window.ReactDOM = ReactDOM;
-
       const AppComponent = RemoteApp.default as ComponentType<any>;
       
-      ReactDOM.default.render(
-        React.default.createElement(AppComponent),
-        this.reactRoot
-      );
+      // Create root and render
+      this.root = createRoot(this.reactRoot);
+      this.root.render(React.createElement(AppComponent));
+
     } catch (error) {
       console.error('Failed to load React application:', error);
     }
   }
 
   ngOnDestroy(): void {
-    if (this.reactRoot) {
-      window.ReactDOM?.unmountComponentAtNode(this.reactRoot);
+    // Properly cleanup React root
+    if (this.root) {
+      this.root.unmount();
     }
   }
 }
