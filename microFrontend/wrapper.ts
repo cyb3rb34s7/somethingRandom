@@ -9,7 +9,7 @@ import type * as ReactDOM from 'react-dom/client';
   standalone: true,
   imports: [CommonModule],
   template: '<div #reactContainer></div>',
-  styles: [':host { display: block; }']
+  styles: [':host { display: block; width: 100%; height: 100%; }']
 })
 export class ReactWrapperComponent implements OnInit, OnDestroy {
   private root?: ReactDOM.Root;
@@ -21,20 +21,24 @@ export class ReactWrapperComponent implements OnInit, OnDestroy {
     this.reactRoot = this.elementRef.nativeElement.querySelector('div') as HTMLElement;
     
     try {
-      const [React, { createRoot }, RemoteApp] = await Promise.all([
-        import('react'),
-        import('react-dom/client'),
-        loadRemoteModule({
-          type: 'module',
-          remoteEntry: 'http://localhost:5173/assets/remoteEntry.js',
-          exposedModule: './App'
-        })
-      ]);
+      // Ensure React is loaded first
+      const React = await import('react');
+      const ReactDOM = await import('react-dom/client');
+
+      // Then load the remote app
+      const RemoteApp = await loadRemoteModule({
+        type: 'module',
+        remoteEntry: 'http://localhost:5173/assets/remoteEntry.js',
+        exposedModule: './App'
+      });
 
       const AppComponent = RemoteApp.default as ComponentType<any>;
-      this.root = createRoot(this.reactRoot);
-      this.root.render(React.createElement(AppComponent));
-
+      
+      // Ensure the container is ready
+      if (this.reactRoot) {
+        this.root = ReactDOM.createRoot(this.reactRoot);
+        this.root.render(React.createElement(AppComponent));
+      }
     } catch (error) {
       console.error('Failed to load React application:', error);
       console.error('Detailed error:', error instanceof Error ? error.stack : error);
