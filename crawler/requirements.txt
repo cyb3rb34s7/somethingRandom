@@ -1,0 +1,14 @@
+# Core dependencies
+requests>=2.25.1
+pytrends>=4.8.0
+
+# NLP dependencies (optional - will use fallback if not installed)
+spacy>=3.0.0
+
+# Data processing dependencies
+pandas>=1.1.5
+numpy>=1.19.5
+
+# Utility dependencies
+typing-extensions>=4.0.0
+tqdm>=4.62.0  # For progress bars
