@@ -24,14 +24,38 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load spaCy model for entity recognition
+# Load spaCy model for entity recognition - with fallback options
 try:
+    # First try to load the model directly
     nlp = spacy.load("en_core_web_sm")
 except OSError:
-    logger.warning("Downloading spaCy model. This will only happen once.")
-    import subprocess
-    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
-    nlp = spacy.load("en_core_web_sm")
+    logger.warning("SpaCy model not found, attempting to download...")
+    try:
+        # Try to download using spaCy's CLI
+        import subprocess
+        result = subprocess.run(
+            ["python", "-m", "spacy", "download", "en_core_web_sm"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        
+        if result.returncode != 0:
+            logger.warning(f"Automatic download failed: {result.stderr}")
+            logger.info("Trying alternative download method...")
+            # Try pip install as alternative
+            subprocess.run(
+                ["pip", "install", "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0-py3-none-any.whl"],
+                check=False
+            )
+        
+        # Try loading again
+        nlp = spacy.load("en_core_web_sm")
+    except Exception as e:
+        logger.warning(f"Could not download spaCy model: {str(e)}")
+        logger.info("Falling back to using a simple rule-based approach without NLP")
+        # Create a minimal placeholder to avoid errors
+        nlp = None
 
 class TrendingFetcher:
     """Class to fetch trending sports topics from Google Trends."""
@@ -114,26 +138,51 @@ class TrendingFetcher:
             if event in topic_lower:
                 return True
         
-        # Use spaCy for entity recognition
-        doc = nlp(topic)
+        # If spaCy is available, use NLP-based classification
+        if nlp:
+            try:
+                # Use spaCy for entity recognition
+                doc = nlp(topic)
+                
+                # If it contains an EVENT or ORG entity and not a PERSON entity, likely an event
+                has_event_or_org = any(ent.label_ in ["EVENT", "ORG"] for ent in doc.ents)
+                has_person = any(ent.label_ == "PERSON" for ent in doc.ents)
+                
+                if has_event_or_org and not has_person:
+                    return True
+                    
+                # If contains PERSON, likely a personality
+                if has_person:
+                    return False
+                    
+                # Default fallback - check for plural words which often indicate events
+                # (e.g., "Finals", "Playoffs", "Championships")
+                tokens = [token for token in doc if token.pos_ == "NOUN"]
+                plural_count = sum(1 for token in tokens if token.tag_ == "NNS")
+                
+                return plural_count > 0
+            except Exception as e:
+                logger.warning(f"Error using spaCy for classification: {str(e)}")
+                # Fall through to simple rule-based approach
         
-        # If it contains an EVENT or ORG entity and not a PERSON entity, likely an event
-        has_event_or_org = any(ent.label_ in ["EVENT", "ORG"] for ent in doc.ents)
-        has_person = any(ent.label_ == "PERSON" for ent in doc.ents)
+        # Simple rule-based fallback approach if spaCy is unavailable or fails
+        # Check if the topic contains words that typically indicate events
+        event_indicators = ["championship", "match", "game", "series", "cup", "open", 
+                         "finals", "playoffs", "tournament", "vs", "versus"]
         
-        if has_event_or_org and not has_person:
+        if any(indicator in topic_lower for indicator in event_indicators):
             return True
             
-        # If contains PERSON, likely a personality
-        if has_person:
+        # Check for team names (often have multiple capital letters)
+        words = topic.split()
+        capital_count = sum(1 for word in words if len(word) > 1 and word[0].isupper())
+        
+        # If more than one capitalized word and no event indicators, likely a personality
+        if capital_count > 1:
             return False
             
-        # Default fallback - check for plural words which often indicate events
-        # (e.g., "Finals", "Playoffs", "Championships")
-        tokens = [token for token in doc if token.pos_ == "NOUN"]
-        plural_count = sum(1 for token in tokens if token.tag_ == "NNS")
-        
-        return plural_count > 0
+        # Default to personality if uncertain (safer assumption)
+        return False
     
     def _exponential_backoff(self, attempt: int) -> None:
         """
