@@ -65,3 +65,17 @@ public class AssetUpdateService {
         }
     }
 }
+
+
+
+
+
+<update id="batchUpdateDeeplinks" parameterType="java.util.List">
+    <foreach collection="list" item="item" separator=";">
+        UPDATE master_asset_table
+        SET deeplink_payload = #{item.deeplinkPayload},
+            deeplink_id = #{item.deeplinkId}
+        WHERE content_id = #{item.contentId}
+        AND country = #{item.cntyCode}
+    </foreach>
+</update>
