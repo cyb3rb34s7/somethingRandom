@@ -1,0 +1,72 @@
+/* custom-mat-table.component.scss */
+.custom-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+tr.example-detail-row {
+  height: 0;
+}
+
+tr.example-element-row:not(.example-expanded-row):hover {
+  background: #f5f5f5;
+}
+
+tr.example-element-row:not(.example-expanded-row):active {
+  background: #efefef;
+}
+
+.example-element-row td {
+  border-bottom-width: 0;
+}
+
+.example-element-detail {
+  overflow: hidden;
+}
+
+.nested-table {
+  margin: 16px;
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.nested-table-header {
+  display: flex;
+  background-color: #eaeaea;
+  padding: 8px 0;
+  font-weight: 500;
+}
+
+.nested-table-row {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.nested-table-row:last-child {
+  border-bottom: none;
+}
+
+.nested-header-cell, .nested-row-cell {
+  flex: 1;
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.no-data {
+  padding: 20px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.example-expanded-row {
+  background: #f5f5f5;
+}
