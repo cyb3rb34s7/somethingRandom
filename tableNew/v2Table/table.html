@@ -1,0 +1,81 @@
+<!-- custom-mat-table.component.html -->
+<div class="custom-table-container">
+  @if (tableData && tableData.length > 0) {
+    <div class="mat-elevation-z2">
+      <table mat-table [dataSource]="dataSource" matSort multiTemplateDataRows>
+        <!-- Generate columns dynamically based on the data -->
+        @for (column of displayedColumns; track trackByFn) {
+          <ng-container [matColumnDef]="column">
+            @if (column === 'RENDER_EMBEDDED' && supportRowExpansion) {
+              <!-- Expansion column -->
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row">
+                @if (hasNestedData(row)) {
+                  <button mat-icon-button (click)="toggleRow(row); $event.stopPropagation()">
+                    <mat-icon>
+                      {{expandedElement === row ? 'remove' : 'add'}}
+                    </mat-icon>
+                  </button>
+                }
+              </td>
+            } @else {
+              <!-- Regular data column -->
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>{{column}}</th>
+              <td mat-cell *matCellDef="let row">{{row[column]}}</td>
+            }
+          </ng-container>
+        }
+
+        <!-- Expanded Content Column -->
+        <ng-container matColumnDef="expandedDetail">
+          <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
+            <div class="example-element-detail" [@detailExpand]="row === expandedElement ? 'expanded' : 'collapsed'">
+              @if (row === expandedElement && row['RENDER_EMBEDDED'] && row['RENDER_EMBEDDED'].length > 0) {
+                <div class="nested-table">
+                  <!-- Nested table header -->
+                  <div class="nested-table-header">
+                    @for (column of getObjectKeys(row['RENDER_EMBEDDED'][0]); track trackByFn) {
+                      <div class="nested-header-cell">{{column}}</div>
+                    }
+                  </div>
+                  
+                  <!-- Nested table rows -->
+                  @for (nestedRow of row['RENDER_EMBEDDED']; track trackByFn) {
+                    <div class="nested-table-row">
+                      @for (column of getObjectKeys(nestedRow); track trackByFn) {
+                        <div class="nested-row-cell">{{nestedRow[column]}}</div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            class="example-element-row"
+            [class.example-expanded-row]="expandedElement === row"
+            (click)="supportRowExpansion && hasNestedData(row) ? toggleRow(row) : null">
+        </tr>
+        <tr mat-row *matRowDef="let row; columns: ['expandedDetail'];"
+            class="example-detail-row"
+            [style.display]="row === expandedElement ? '' : 'none'">
+        </tr>
+      </table>
+
+      @if (isPaginated) {
+        <mat-paginator
+          [length]="totalRecords || tableData.length"
+          [pageSize]="currentPageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          [pageIndex]="currentPageIndex"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      }
+    </div>
+  } @else {
+    <div class="no-data">No data available</div>
+  }
+</div>
