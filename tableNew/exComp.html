@@ -1,0 +1,22 @@
+<!-- media-assets.component.html -->
+<div class="media-assets-container">
+  <h2>Media Assets</h2>
+  
+  @if(tableData.length > 0) {
+    <app-custom-mat-table 
+      [tableData]="tableData" 
+      [isPaginated]="true"
+      [supportRowExpansion]="true"
+      [totalRecords]="totalRecords"
+      [defaultPageSize]="25"
+      [pageSizeOptions]="[25, 50, 100, 250, 500]"
+      [batchSize]="1000"
+      (loadMoreData)="onLoadMoreData($event)">
+    </app-custom-mat-table>
+  } @else {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading media assets...</p>
+    </div>
+  }
+</div>
