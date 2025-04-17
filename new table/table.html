@@ -3,59 +3,67 @@
          multiTemplateDataRows class="dynamic-table mat-elevation-z1">
     
     <!-- Expansion Column -->
-    <ng-container *ngIf="supportRowExpansion" matColumnDef="expand">
-      <th mat-header-cell *matHeaderCellDef></th>
-      <td mat-cell *matCellDef="let row" class="expand-cell">
-        <button mat-icon-button (click)="toggleRowExpand(row); $event.stopPropagation()">
-          <mat-icon>{{expandedRow === row ? 'remove' : 'add'}}</mat-icon>
-        </button>
-      </td>
-    </ng-container>
+    @if (supportRowExpansion) {
+      <ng-container matColumnDef="expand">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row" class="expand-cell">
+          <button mat-icon-button (click)="toggleRowExpand(row); $event.stopPropagation()">
+            <mat-icon>{{expandedRow === row ? 'remove' : 'add'}}</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+    }
 
     <!-- Dynamic Columns -->
-    <ng-container *ngFor="let column of columns" [matColumnDef]="column.field">
-      <th mat-header-cell *matHeaderCellDef [style.width]="column.width" [mat-sort-header]="column.sortable ? column.field : null">
-        {{column.header}}
-      </th>
-      <td mat-cell *matCellDef="let row" [style.width]="column.width" 
-          [matTooltip]="column.tooltip ? row[column.field] : ''"
-          [matTooltipDisabled]="!column.tooltip || !row[column.field]">
-        <ng-container *ngIf="column.isHtml; else textContent">
-          <span [innerHTML]="getFormattedCellValue(row, column)"></span>
-        </ng-container>
-        <ng-template #textContent>
-          <span class="cell-content">{{getFormattedCellValue(row, column)}}</span>
-        </ng-template>
-      </td>
-    </ng-container>
+    @for (column of columns; track column.field) {
+      <ng-container [matColumnDef]="column.field">
+        <th mat-header-cell *matHeaderCellDef [style.width]="column.width" 
+            [attr.mat-sort-header]="column.sortable ? column.field : null">
+          {{column.header}}
+        </th>
+        <td mat-cell *matCellDef="let row" [style.width]="column.width" 
+            [matTooltip]="column.tooltip && row[column.field] ? row[column.field] : ''"
+            [matTooltipDisabled]="!column.tooltip || !row[column.field]">
+          @if (column.isHtml) {
+            <span [innerHTML]="getFormattedCellValue(row, column)"></span>
+          } @else {
+            <span class="cell-content">{{getFormattedCellValue(row, column)}}</span>
+          }
+        </td>
+      </ng-container>
+    }
 
     <!-- Expanded Content Column -->
     <ng-container matColumnDef="expandedDetail">
       <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length" class="expanded-detail-cell">
         <div class="expanded-detail" [@detailExpand]="row === expandedRow ? 'expanded' : 'collapsed'">
-          <div *ngIf="expandedRowData.length > 0" class="nested-table-container">
-            <table mat-table [dataSource]="expandedRowData" class="nested-table">
-              <ng-container *ngFor="let column of columns" [matColumnDef]="column.field" [ngIf]="column.field !== 'expand'">
-                <th mat-header-cell *matHeaderCellDef>{{column.header}}</th>
-                <td mat-cell *matCellDef="let childRow" 
-                    [matTooltip]="column.tooltip ? childRow[column.field] : ''"
-                    [matTooltipDisabled]="!column.tooltip || !childRow[column.field]">
-                  <ng-container *ngIf="column.isHtml; else nestedTextContent">
-                    <span [innerHTML]="getFormattedCellValue(childRow, column)"></span>
+          @if (expandedRowData.length > 0) {
+            <div class="nested-table-container">
+              <table mat-table [dataSource]="expandedRowData" class="nested-table">
+                @for (column of expandedColumns; track column.field) {
+                  <ng-container [matColumnDef]="column.field">
+                    <th mat-header-cell *matHeaderCellDef>{{column.header}}</th>
+                    <td mat-cell *matCellDef="let childRow" 
+                        [matTooltip]="column.tooltip && childRow[column.field] ? childRow[column.field] : ''"
+                        [matTooltipDisabled]="!column.tooltip || !childRow[column.field]">
+                      @if (column.isHtml) {
+                        <span [innerHTML]="getFormattedCellValue(childRow, column)"></span>
+                      } @else {
+                        <span class="cell-content">{{getFormattedCellValue(childRow, column)}}</span>
+                      }
+                    </td>
                   </ng-container>
-                  <ng-template #nestedTextContent>
-                    <span class="cell-content">{{getFormattedCellValue(childRow, column)}}</span>
-                  </ng-template>
-                </td>
-              </ng-container>
+                }
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns.filter(col => col !== 'expand')"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns.filter(col => col !== 'expand');"></tr>
-            </table>
-          </div>
-          <div *ngIf="expandedRowData.length === 0" class="loading-container">
-            <span>Loading...</span>
-          </div>
+                <tr mat-header-row *matHeaderRowDef="expandedColumnsFields"></tr>
+                <tr mat-row *matRowDef="let row; columns: expandedColumnsFields;"></tr>
+              </table>
+            </div>
+          } @else {
+            <div class="loading-container">
+              <span>Loading...</span>
+            </div>
+          }
         </div>
       </td>
     </ng-container>
@@ -64,14 +72,16 @@
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"
         class="row-element"
         [class.expanded-row]="expandedRow === row"></tr>
-    <tr mat-row *matRowDef="let row; columns: ['expandedDetail']; when: (row) => expandedRow === row"
+    <tr mat-row *matRowDef="let row; columns: ['expandedDetail']; when: isExpanded"
         class="detail-row"></tr>
   </table>
 
-  <mat-paginator *ngIf="showPaginator"
-                 [pageSize]="pageSize"
-                 [pageSizeOptions]="pageSizeOptions"
-                 [length]="totalRecords"
-                 (page)="onPageChange($event)"
-                 showFirstLastButtons></mat-paginator>
+  @if (showPaginator) {
+    <mat-paginator
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [length]="totalRecords"
+      (page)="onPageChange($event)"
+      showFirstLastButtons></mat-paginator>
+  }
 </div>
