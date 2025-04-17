@@ -1,0 +1,78 @@
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.dynamic-table {
+  width: 100%;
+
+  th.mat-header-cell {
+    background-color: #f5f5f5;
+    color: rgba(0, 0, 0, 0.7);
+    font-weight: 500;
+    padding: 0 8px;
+  }
+
+  td.mat-cell {
+    padding: 0 8px;
+  }
+
+  .expand-cell {
+    width: 48px;
+    text-align: center;
+  }
+
+  .cell-content {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    display: block;
+  }
+
+  .expanded-row {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .expanded-detail-cell {
+    padding: 0;
+  }
+
+  .expanded-detail {
+    overflow: hidden;
+  }
+
+  .detail-row {
+    height: 0;
+  }
+
+  .nested-table-container {
+    padding: 16px;
+  }
+
+  .nested-table {
+    width: 100%;
+    box-shadow: none;
+    background-color: rgba(0, 0, 0, 0.02);
+    
+    th {
+      font-size: 12px;
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+    
+    td {
+      font-size: 12px;
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+  }
+}
+
+tr.row-element:hover {
+  background: rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+}
