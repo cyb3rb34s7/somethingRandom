@@ -1,10 +1,11 @@
-import { Component, Input, Output, EventEmitter, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ViewChild, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSortModule, MatSort } from '@angular/material/sort';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonModule } from '@angular/material/button';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -26,7 +27,8 @@ export interface TableColumn {
     MatSortModule,
     MatPaginatorModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatButtonModule
   ],
   templateUrl: './dynamic-table.component.html',
   styleUrls: ['./dynamic-table.component.scss'],
@@ -38,8 +40,9 @@ export interface TableColumn {
     ]),
   ]
 })
-export class DynamicTableComponent implements OnInit {
+export class DynamicTableComponent implements OnInit, OnChanges {
   @Input() columns: TableColumn[] = [];
+  @Input() expandedColumns: TableColumn[] = [];
   @Input() data: any[] = [];
   @Input() supportRowExpansion = false;
   @Input() pageSize = 10;
@@ -57,6 +60,7 @@ export class DynamicTableComponent implements OnInit {
 
   dataSource = new MatTableDataSource<any>([]);
   displayedColumns: string[] = [];
+  expandedColumnsFields: string[] = [];
   expandedRow: any | null = null;
   expandedRowData: any[] = [];
   
@@ -65,18 +69,26 @@ export class DynamicTableComponent implements OnInit {
   ngOnInit() {
     this.updateDisplayedColumns();
     this.dataSource.data = this.data;
+    this.expandedColumnsFields = this.expandedColumns.map(col => col.field);
   }
 
   ngAfterViewInit() {
     this.dataSource.sort = this.sort;
-    if (!this.serverSidePagination) {
+    if (!this.serverSidePagination && this.paginator) {
       this.dataSource.paginator = this.paginator;
     }
   }
 
-  ngOnChanges() {
-    this.updateDisplayedColumns();
-    this.dataSource.data = this.data;
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['data'] || changes['columns'] || changes['supportRowExpansion']) {
+      this.updateDisplayedColumns();
+      if (changes['data']) {
+        this.dataSource.data = this.data;
+      }
+      if (changes['expandedColumns']) {
+        this.expandedColumnsFields = this.expandedColumns.map(col => col.field);
+      }
+    }
   }
 
   updateDisplayedColumns() {
@@ -101,9 +113,7 @@ export class DynamicTableComponent implements OnInit {
     this.expandedRowData = data;
   }
 
-  isCellOverflowing(element: HTMLElement): boolean {
-    return element.offsetWidth < element.scrollWidth;
-  }
+  isExpanded = (row: any) => row === this.expandedRow;
 
   sanitizeHtml(html: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(html);
