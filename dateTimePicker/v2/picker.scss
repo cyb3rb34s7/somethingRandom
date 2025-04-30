@@ -1,0 +1,344 @@
+.datetime-picker-container {
+  position: relative;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.input-container {
+  margin-bottom: 8px;
+}
+
+.input-label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #333;
+  font-weight: 500;
+}
+
+.required-indicator {
+  color: #e53935;
+  margin-left: 2px;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background-color: #fff;
+  transition: border-color 0.2s;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+  }
+
+  &:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+}
+
+.calendar-icon-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #757575;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:disabled {
+    color: #bdbdbd;
+    cursor: not-allowed;
+  }
+}
+
+.picker-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 480px; // Wider to accommodate time panel
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  padding-bottom: 16px;
+}
+
+.picker-content {
+  display: flex;
+  width: 100%;
+}
+
+// Calendar Panel
+.calendar-panel {
+  width: 65%;
+  padding: 16px;
+  border-right: 1px solid #f0f0f0;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.month-year {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: #757575;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+}
+
+.calendar-grid {
+  margin-bottom: 16px;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.weekday {
+  font-size: 12px;
+  font-weight: 500;
+  color: #757575;
+  padding: 6px 0;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.day-btn {
+  background: none;
+  border: none;
+  height: 32px;
+  width: 32px;
+  font-size: 13px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin: 1px auto;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+
+  &.other-month {
+    color: #bdbdbd;
+  }
+
+  &.today {
+    border: 1px solid #2196f3;
+    color: #2196f3;
+  }
+
+  &.selected {
+    background-color: #2196f3;
+    color: white;
+  }
+}
+
+// Time Panel
+.time-panel {
+  width: 35%;
+  padding: 16px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-pickers {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: space-around;
+}
+
+.time-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(50% - 10px);
+}
+
+.time-label {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 12px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.time-scroller {
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.time-selector {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.time-selector-highlight {
+  position: absolute;
+  height: 40px;
+  width: 100%;
+  background-color: rgba(33, 150, 243, 0.1);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 4px;
+}
+
+.time-selector-items {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 80px 0; // Padding to allow items to scroll to center
+  scrollbar-width: thin;
+  scrollbar-color: #ddd #f5f5f5;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f5f5f5;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: #ddd;
+    border-radius: 3px;
+  }
+}
+
+.time-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #333;
+  cursor: pointer;
+  transition: color 0.2s, font-weight 0.2s;
+  
+  &:hover {
+    color: #2196f3;
+  }
+  
+  &.selected {
+    color: #2196f3;
+    font-weight: 500;
+  }
+}
+
+// Action Buttons
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  margin-top: 8px;
+}
+
+.today-btn {
+  background: none;
+  border: none;
+  color: #2196f3;
+  font-size: 14px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: rgba(33, 150, 243, 0.1);
+  }
+}
+
+.right-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #757575;
+  font-size: 14px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+}
+
+.apply-btn {
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #1976d2;
+  }
+}
