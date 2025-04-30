@@ -324,7 +324,6 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     const currentIndex = this.hours.findIndex(h => h === this.selectedHour);
     const newIndex = Math.max(0, Math.min(this.hours.length - 1, currentIndex + direction));
     this.selectHour(this.hours[newIndex]);
-    this.scrollToSelectedTime();
   }
 
   onMinutesWheel(event: WheelEvent) {
@@ -333,7 +332,6 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     const currentIndex = this.minutes.findIndex(m => m === this.selectedMinute);
     const newIndex = Math.max(0, Math.min(this.minutes.length - 1, currentIndex + direction));
     this.selectMinute(this.minutes[newIndex]);
-    this.scrollToSelectedTime();
   }
 
   onSecondsWheel(event: WheelEvent) {
@@ -342,7 +340,6 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     const currentIndex = this.seconds.findIndex(s => s === this.selectedSecond);
     const newIndex = Math.max(0, Math.min(this.seconds.length - 1, currentIndex + direction));
     this.selectSecond(this.seconds[newIndex]);
-    this.scrollToSelectedTime();
   }
 
   // Control Value Accessor Methods
