@@ -1,0 +1,105 @@
+<div class="datetime-picker-container">
+  <!-- Input field with calendar icon -->
+  <div class="input-container">
+    @if (label) {
+      <label [for]="inputId" class="input-label">
+        {{ label }}
+        @if (isRequired) {
+          <span class="required-indicator">*</span>
+        }
+      </label>
+    }
+    <div class="input-group">
+      <input
+        type="text"
+        [id]="inputId"
+        [value]="displayValue"
+        [placeholder]="placeholder"
+        [disabled]="disabled"
+        (click)="togglePicker()"
+        readonly
+        #inputField
+      />
+      <button type="button" class="calendar-icon-btn" (click)="togglePicker()" [disabled]="disabled">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M16 2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M3 9H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M3 8.5C3 7.67157 3.67157 7 4.5 7H19.5C20.3284 7 21 7.67157 21 8.5V19.5C21 20.3284 20.3284 21 19.5 21H4.5C3.67157 21 3 20.3284 3 19.5V8.5Z" stroke="currentColor" stroke-width="1.5" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Date Time Picker Dropdown -->
+  @if (isOpen) {
+    <div class="picker-dropdown" #pickerContainer>
+      <!-- Calendar Navigation -->
+      <div class="calendar-header">
+        <button type="button" class="nav-btn" (click)="prevMonth()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <span class="month-year">{{ currentMonth | date:'MMMM yyyy' }}</span>
+        <button type="button" class="nav-btn" (click)="nextMonth()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="calendar-grid">
+        <div class="weekdays">
+          @for (day of weekDays; track $index) {
+            <div class="weekday">{{ day }}</div>
+          }
+        </div>
+        <div class="days">
+          @for (day of calendarDays; track $index) {
+            <button 
+              type="button"
+              class="day-btn"
+              [class.other-month]="!day.isCurrentMonth"
+              [class.today]="day.isToday"
+              [class.selected]="day.isSelected"
+              (click)="selectDate(day)"
+            >
+              {{ day.date.getDate() }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Time Selectors -->
+      <div class="time-selectors">
+        <div class="time-selector">
+          <label>Hours</label>
+          <select [(ngModel)]="selectedHour" (change)="selectTime()">
+            @for (hour of hours; track $index) {
+              <option [value]="hour">{{ hour }}</option>
+            }
+          </select>
+        </div>
+        <div class="time-selector">
+          <label>Minutes</label>
+          <select [(ngModel)]="selectedMinute" (change)="selectTime()">
+            @for (minute of minutes; track $index) {
+              <option [value]="minute">{{ minute }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button type="button" class="today-btn" (click)="goToToday()">Today</button>
+        <div class="right-actions">
+          <button type="button" class="clear-btn" (click)="clear()">Clear</button>
+          <button type="button" class="apply-btn" (click)="apply()">OK</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
