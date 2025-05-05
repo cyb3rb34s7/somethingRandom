@@ -211,18 +211,21 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     this.viewMode = 'months';
   }
 
-  selectYear(year: number) {
+  selectYear(year: number, event: Event) {
+    event.stopPropagation();
     this.currentMonth = new Date(year, this.currentMonth.getMonth(), 1);
     this.viewMode = 'months';
   }
 
-  selectMonth(monthValue: number) {
+  selectMonth(monthValue: number, event: Event) {
+    event.stopPropagation();
     this.currentMonth = new Date(this.currentMonth.getFullYear(), monthValue, 1);
     this.viewMode = 'days';
     this.buildCalendar();
   }
 
-  selectDate(day: { date: Date }) {
+  selectDate(day: { date: Date }, event: Event) {
+    event.stopPropagation();
     // Create a new date with hours, minutes, and seconds from current selection
     this.selectedDate = new Date(
       day.date.getFullYear(),
@@ -240,7 +243,9 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     this.buildCalendar();
   }
 
-  selectHour(hour: string) {
+  selectHour(hour: string, event?: Event) {
+    if (event) event.stopPropagation();
+    
     // Update the selected hour
     this.selectedHour = hour;
     
@@ -255,7 +260,9 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     }, 0);
   }
 
-  selectMinute(minute: string) {
+  selectMinute(minute: string, event?: Event) {
+    if (event) event.stopPropagation();
+    
     // Update the selected minute
     this.selectedMinute = minute;
     
@@ -270,7 +277,9 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     }, 0);
   }
   
-  selectSecond(second: string) {
+  selectSecond(second: string, event?: Event) {
+    if (event) event.stopPropagation();
+    
     // Update the selected second
     this.selectedSecond = second;
     
@@ -325,35 +334,43 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     }
   }
 
-  prevMonth() {
+  prevMonth(event?: Event) {
+    if (event) event.stopPropagation();
     this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() - 1, 1);
     this.buildCalendar();
   }
 
-  nextMonth() {
+  nextMonth(event?: Event) {
+    if (event) event.stopPropagation();
     this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + 1, 1);
     this.buildCalendar();
   }
 
-  prevDecade() {
+  prevDecade(event?: Event) {
+    if (event) event.stopPropagation();
     this.currentDecade -= 10;
     this.generateYearRange();
   }
 
-  nextDecade() {
+  nextDecade(event?: Event) {
+    if (event) event.stopPropagation();
     this.currentDecade += 10;
     this.generateYearRange();
   }
 
-  prevYear() {
+  prevYear(event?: Event) {
+    if (event) event.stopPropagation();
     this.currentMonth = new Date(this.currentMonth.getFullYear() - 1, this.currentMonth.getMonth(), 1);
   }
 
-  nextYear() {
+  nextYear(event?: Event) {
+    if (event) event.stopPropagation();
     this.currentMonth = new Date(this.currentMonth.getFullYear() + 1, this.currentMonth.getMonth(), 1);
   }
 
-  goToToday() {
+  goToToday(event?: Event) {
+    if (event) event.stopPropagation();
+    
     // Update current month view to today's month
     this.currentMonth = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
     
@@ -384,7 +401,9 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
   }
 
   // Clear selection
-  clear() {
+  clear(event?: Event) {
+    if (event) event.stopPropagation();
+    
     this.selectedDate = new Date();
     this.displayValue = '';
     this.onChange(null);
@@ -393,7 +412,9 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
   }
 
   // Apply selection and close picker
-  apply() {
+  apply(event?: Event) {
+    if (event) event.stopPropagation();
+    
     this.updateDisplayValue();
     this.isOpen = false;
   }
