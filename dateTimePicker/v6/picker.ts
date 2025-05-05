@@ -199,13 +199,15 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
   }
 
   // Navigation methods
-  switchToYearsView() {
+  switchToYearsView(event: Event) {
+    event.stopPropagation();
     this.viewMode = 'years';
     this.currentDecade = Math.floor(this.currentMonth.getFullYear() / 10) * 10;
     this.generateYearRange();
   }
 
-  switchToMonthsView() {
+  switchToMonthsView(event: Event) {
+    event.stopPropagation();
     this.viewMode = 'months';
   }
 
@@ -343,6 +345,14 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
     this.generateYearRange();
   }
 
+  prevYear() {
+    this.currentMonth = new Date(this.currentMonth.getFullYear() - 1, this.currentMonth.getMonth(), 1);
+  }
+
+  nextYear() {
+    this.currentMonth = new Date(this.currentMonth.getFullYear() + 1, this.currentMonth.getMonth(), 1);
+  }
+
   goToToday() {
     // Update current month view to today's month
     this.currentMonth = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
@@ -437,5 +447,10 @@ export class DatetimePickerComponent implements OnInit, ControlValueAccessor {
 
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
+  }
+  
+  // Also add stopPropagation to all navigation buttons
+  onNavButtonClick(event: Event) {
+    event.stopPropagation();
   }
 }
