@@ -1,0 +1,243 @@
+<div class="datetime-picker-container">
+  <!-- Input field with calendar icon -->
+  <div class="input-container">
+    @if (label) {
+      <label [for]="inputId" class="input-label">
+        {{ label }}
+        @if (isRequired) {
+          <span class="required-indicator">*</span>
+        }
+      </label>
+    }
+    <div class="input-group">
+      <input
+        type="text"
+        [id]="inputId"
+        [value]="displayValue"
+        [placeholder]="placeholder"
+        [disabled]="disabled"
+        (click)="togglePicker()"
+        readonly
+        #inputField
+      />
+      <button type="button" class="calendar-icon-btn" (click)="togglePicker()" [disabled]="disabled">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M16 2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M3 9H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M3 8.5C3 7.67157 3.67157 7 4.5 7H19.5C20.3284 7 21 7.67157 21 8.5V19.5C21 20.3284 20.3284 21 19.5 21H4.5C3.67157 21 3 20.3284 3 19.5V8.5Z" stroke="currentColor" stroke-width="1.5" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Date Time Picker Dropdown -->
+  @if (isOpen) {
+    <div class="picker-dropdown" #pickerContainer>
+      <div class="picker-content">
+        <!-- Calendar Panel -->
+        <div class="calendar-panel">
+          <!-- Calendar Navigation -->
+          <div class="calendar-header">
+            @switch (viewMode) {
+              @case ('days') {
+                <button type="button" class="nav-btn" (click)="prevMonth()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button type="button" class="month-year" (click)="switchToMonthsView()">
+                  {{ currentMonth | date:'MMMM yyyy' }}
+                </button>
+                <button type="button" class="nav-btn" (click)="nextMonth()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              }
+              @case ('months') {
+                <button type="button" class="nav-btn" (click)="prevYear()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button type="button" class="month-year" (click)="switchToYearsView()">
+                  {{ currentMonth | date:'yyyy' }}
+                </button>
+                <button type="button" class="nav-btn" (click)="nextYear()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              }
+              @case ('years') {
+                <button type="button" class="nav-btn" (click)="prevDecade()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button type="button" class="month-year">
+                  {{ currentDecade }} - {{ currentDecade + 11 }}
+                </button>
+                <button type="button" class="nav-btn" (click)="nextDecade()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              }
+            }
+          </div>
+
+          <!-- Calendar Content -->
+          @switch (viewMode) {
+            @case ('days') {
+              <!-- Calendar Grid -->
+              <div class="calendar-grid">
+                <div class="weekdays">
+                  @for (day of weekDays; track $index) {
+                    <div class="weekday">{{ day }}</div>
+                  }
+                </div>
+                <div class="days">
+                  @for (day of calendarDays; track $index) {
+                    <button 
+                      type="button"
+                      class="day-btn"
+                      [class.other-month]="!day.isCurrentMonth"
+                      [class.today]="day.isToday"
+                      [class.selected]="day.isSelected"
+                      (click)="selectDate(day)"
+                    >
+                      {{ day.date.getDate() }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+            @case ('months') {
+              <!-- Month Grid -->
+              <div class="month-grid">
+                @for (month of months; track $index) {
+                  <button 
+                    type="button"
+                    class="month-btn"
+                    [class.selected]="month.value === currentMonth.getMonth()"
+                    (click)="selectMonth(month.value)"
+                  >
+                    {{ month.name }}
+                  </button>
+                }
+              </div>
+            }
+            @case ('years') {
+              <!-- Year Grid -->
+              <div class="year-grid">
+                @for (year of yearRange; track $index) {
+                  <button 
+                    type="button"
+                    class="year-btn"
+                    [class.selected]="year === currentMonth.getFullYear()"
+                    [class.today]="year === today.getFullYear()"
+                    (click)="selectYear(year)"
+                  >
+                    {{ year }}
+                  </button>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Time Panel -->
+        <div class="time-panel">
+          <!-- Time Pickers -->
+          <div class="time-pickers">
+            <!-- Hours Picker -->
+            <div class="time-picker">
+              <div class="time-label">Hours</div>
+              <div class="time-scroller">
+                <div class="time-selector">
+                  <div class="time-selector-highlight"></div>
+                  <div 
+                    class="time-selector-items" 
+                    #hoursContainer
+                    (wheel)="onHoursWheel($event)"
+                  >
+                    @for (hour of hours; track $index) {
+                      <div 
+                        class="time-item" 
+                        [class.selected]="hour === selectedHour"
+                        (click)="selectHour(hour)"
+                      >
+                        {{ hour }}
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Minutes Picker -->
+            <div class="time-picker">
+              <div class="time-label">Minutes</div>
+              <div class="time-scroller">
+                <div class="time-selector">
+                  <div class="time-selector-highlight"></div>
+                  <div 
+                    class="time-selector-items" 
+                    #minutesContainer
+                    (wheel)="onMinutesWheel($event)"
+                  >
+                    @for (minute of minutes; track $index) {
+                      <div 
+                        class="time-item" 
+                        [class.selected]="minute === selectedMinute"
+                        (click)="selectMinute(minute)"
+                      >
+                        {{ minute }}
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Seconds Picker -->
+            <div class="time-picker">
+              <div class="time-label">Seconds</div>
+              <div class="time-scroller">
+                <div class="time-selector">
+                  <div class="time-selector-highlight"></div>
+                  <div 
+                    class="time-selector-items" 
+                    #secondsContainer
+                    (wheel)="onSecondsWheel($event)"
+                  >
+                    @for (second of seconds; track $index) {
+                      <div 
+                        class="time-item" 
+                        [class.selected]="second === selectedSecond"
+                        (click)="selectSecond(second)"
+                      >
+                        {{ second }}
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button type="button" class="today-btn" (click)="goToToday()">Today</button>
+        <div class="right-actions">
+          <button type="button" class="clear-btn" (click)="clear()">Clear</button>
+          <button type="button" class="apply-btn" (click)="apply()">OK</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
