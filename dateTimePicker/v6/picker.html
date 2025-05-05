@@ -41,7 +41,7 @@
           <div class="calendar-header">
             @switch (viewMode) {
               @case ('days') {
-                <button type="button" class="nav-btn" (click)="prevMonth(); onNavButtonClick($event)">
+                <button type="button" class="nav-btn" (click)="prevMonth($event); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -49,14 +49,14 @@
                 <button type="button" class="month-year" (click)="switchToMonthsView($event)">
                   {{ currentMonth | date:'MMMM yyyy' }}
                 </button>
-                <button type="button" class="nav-btn" (click)="nextMonth(); onNavButtonClick($event)">
+                <button type="button" class="nav-btn" (click)="nextMonth($event); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
               }
               @case ('months') {
-                <button type="button" class="nav-btn" (click)="prevYear(); onNavButtonClick($event)">
+                <button type="button" class="nav-btn" (click)="prevYear($event); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -64,14 +64,14 @@
                 <button type="button" class="month-year" (click)="switchToYearsView($event)">
                   {{ currentMonth | date:'yyyy' }}
                 </button>
-                <button type="button" class="nav-btn" (click)="nextYear(); onNavButtonClick($event)">
+                <button type="button" class="nav-btn" (click)="nextYear($event); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
               }
               @case ('years') {
-                <button type="button" class="nav-btn" (click)="prevDecade(); onNavButtonClick($event)">
+                <button type="button" class="nav-btn" (click)="prevDecade($event); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -79,7 +79,7 @@
                 <button type="button" class="month-year">
                   {{ currentDecade }} - {{ currentDecade + 11 }}
                 </button>
-                <button type="button" class="nav-btn" (click)="nextDecade(); onNavButtonClick($event)">
+                <button type="button" class="nav-btn" (click)="nextDecade($event); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -167,7 +167,7 @@
                       <div 
                         class="time-item" 
                         [class.selected]="hour === selectedHour"
-                        (click)="selectHour(hour)"
+                        (click)="selectHour(hour, $event)"
                       >
                         {{ hour }}
                       </div>
@@ -192,7 +192,7 @@
                       <div 
                         class="time-item" 
                         [class.selected]="minute === selectedMinute"
-                        (click)="selectMinute(minute)"
+                        (click)="selectMinute(minute, $event)"
                       >
                         {{ minute }}
                       </div>
@@ -217,7 +217,7 @@
                       <div 
                         class="time-item" 
                         [class.selected]="second === selectedSecond"
-                        (click)="selectSecond(second)"
+                        (click)="selectSecond(second, $event)"
                       >
                         {{ second }}
                       </div>
@@ -232,10 +232,10 @@
 
       <!-- Action Buttons -->
       <div class="action-buttons">
-        <button type="button" class="today-btn" (click)="goToToday()">Today</button>
+        <button type="button" class="today-btn" (click)="goToToday($event)">Today</button>
         <div class="right-actions">
-          <button type="button" class="clear-btn" (click)="clear()">Clear</button>
-          <button type="button" class="apply-btn" (click)="apply()">OK</button>
+          <button type="button" class="clear-btn" (click)="clear($event)">Clear</button>
+          <button type="button" class="apply-btn" (click)="apply($event)">OK</button>
         </div>
       </div>
     </div>
