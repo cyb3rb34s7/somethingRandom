@@ -41,37 +41,37 @@
           <div class="calendar-header">
             @switch (viewMode) {
               @case ('days') {
-                <button type="button" class="nav-btn" (click)="prevMonth()">
+                <button type="button" class="nav-btn" (click)="prevMonth(); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
-                <button type="button" class="month-year" (click)="switchToMonthsView()">
+                <button type="button" class="month-year" (click)="switchToMonthsView($event)">
                   {{ currentMonth | date:'MMMM yyyy' }}
                 </button>
-                <button type="button" class="nav-btn" (click)="nextMonth()">
+                <button type="button" class="nav-btn" (click)="nextMonth(); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
               }
               @case ('months') {
-                <button type="button" class="nav-btn" (click)="prevYear()">
+                <button type="button" class="nav-btn" (click)="prevYear(); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
-                <button type="button" class="month-year" (click)="switchToYearsView()">
+                <button type="button" class="month-year" (click)="switchToYearsView($event)">
                   {{ currentMonth | date:'yyyy' }}
                 </button>
-                <button type="button" class="nav-btn" (click)="nextYear()">
+                <button type="button" class="nav-btn" (click)="nextYear(); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
               }
               @case ('years') {
-                <button type="button" class="nav-btn" (click)="prevDecade()">
+                <button type="button" class="nav-btn" (click)="prevDecade(); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -79,7 +79,7 @@
                 <button type="button" class="month-year">
                   {{ currentDecade }} - {{ currentDecade + 11 }}
                 </button>
-                <button type="button" class="nav-btn" (click)="nextDecade()">
+                <button type="button" class="nav-btn" (click)="nextDecade(); onNavButtonClick($event)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
