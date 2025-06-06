@@ -43,6 +43,39 @@ class TMDBClient:
         self.session = requests.Session()
         self.session.headers.update(self.headers)
     
+    def find_by_imdb_id(self, imdb_id: str) -> Optional[Dict]:
+        """Find TMDB data using IMDB ID"""
+        try:
+            # Ensure IMDB ID has 'tt' prefix
+            if not imdb_id.startswith('tt'):
+                imdb_id = f"tt{imdb_id}"
+            
+            url = f"{self.base_url}/find/{imdb_id}"
+            params = {"external_source": "imdb_id"}
+            response = self.session.get(url, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Return first movie or TV result
+                if data.get('movie_results'):
+                    return {'type': 'movie', 'id': data['movie_results'][0]['id']}
+                elif data.get('tv_results'):
+                    return {'type': 'tv', 'id': data['tv_results'][0]['id']}
+                else:
+                    logging.warning(f"No TMDB match found for IMDB ID: {imdb_id}")
+                    return None
+            elif response.status_code == 429:
+                retry_after = int(response.headers.get('Retry-After', 1))
+                logging.warning(f"Rate limited. Waiting {retry_after} seconds...")
+                time.sleep(retry_after)
+                return self.find_by_imdb_id(imdb_id)
+            else:
+                logging.error(f"Failed to find IMDB {imdb_id}: {response.status_code}")
+                return None
+        except Exception as e:
+            logging.error(f"Error finding IMDB {imdb_id}: {str(e)}")
+            return None
+    
     def get_movie_details(self, tmdb_id: str) -> Optional[Dict]:
         """Fetch movie details from TMDB"""
         try:
@@ -110,9 +143,9 @@ class DatabaseManager:
             self.conn.close()
         logging.info("Database connection closed")
     
-    def get_unprocessed_items(self) -> List[MovieShow]:
+    def get_unprocessed_items(self, test_ids: Optional[List[int]] = None) -> List[MovieShow]:
         """Get movies/shows that haven't been processed yet"""
-        query = """
+        base_query = """
         SELECT DISTINCT 
             pt.primary_topic_id,
             pt.name,
@@ -121,7 +154,7 @@ class DatabaseManager:
             ts.source_name
         FROM bingeplus_external.primary_topics pt
         JOIN bingeplus_external.topic_sources ts ON pt.primary_topic_id = ts.primary_topic_id
-        WHERE ts.source_name = 'tmdb'
+        WHERE ts.source_name IN ('tmdb', 'imdb')
         AND pt.primary_topic_id NOT IN (
             SELECT DISTINCT primary_topic_id 
             FROM bingeplus_external.topic_people 
@@ -132,8 +165,15 @@ class DatabaseManager:
             FROM bingeplus_external.topic_descriptions 
             WHERE record_provider = 'tmdb'
         )
-        ORDER BY pt.created_at DESC
         """
+        
+        # Add test condition if provided
+        if test_ids:
+            id_list = ','.join(map(str, test_ids))
+            query = f"{base_query} AND pt.primary_topic_id IN ({id_list})"
+            logging.info(f"TESTING MODE: Processing only IDs: {test_ids}")
+        else:
+            query = f"{base_query} ORDER BY pt.created_at DESC"
         
         try:
             self.cursor.execute(query)
@@ -144,9 +184,15 @@ class DatabaseManager:
                 item = MovieShow(
                     primary_topic_id=row[0],
                     name=row[1],
-                    type=row[2],
-                    tmdb_id=row[3] if row[4] == 'tmdb' else None
+                    type=row[2]
                 )
+                
+                # Set appropriate ID based on source
+                if row[4] == 'tmdb':
+                    item.tmdb_id = row[3]
+                else:  # imdb
+                    item.imdb_id = row[3]
+                
                 items.append(item)
             
             logging.info(f"Found {len(items)} unprocessed items")
@@ -229,11 +275,33 @@ class MovieShowEnricher:
         try:
             logging.info(f"Processing {item.type}: {item.name} (ID: {item.primary_topic_id})")
             
+            tmdb_id = None
+            
+            # Handle IMDB ID - convert to TMDB ID first
+            if item.imdb_id and not item.tmdb_id:
+                logging.info(f"Converting IMDB ID {item.imdb_id} to TMDB ID")
+                find_result = self.tmdb_client.find_by_imdb_id(item.imdb_id)
+                if find_result:
+                    tmdb_id = str(find_result['id'])
+                    # Verify type matches
+                    expected_type = 'movie' if item.type.lower() == 'movie' else 'tv'
+                    if find_result['type'] != expected_type:
+                        logging.warning(f"Type mismatch for {item.name}: expected {expected_type}, got {find_result['type']}")
+                else:
+                    logging.error(f"Could not find TMDB ID for IMDB ID: {item.imdb_id}")
+                    return False
+            else:
+                tmdb_id = item.tmdb_id
+            
+            if not tmdb_id:
+                logging.error(f"No TMDB ID available for {item.name}")
+                return False
+            
             # Fetch data from TMDB
             if item.type.lower() == 'movie':
-                data = self.tmdb_client.get_movie_details(item.tmdb_id)
+                data = self.tmdb_client.get_movie_details(tmdb_id)
             else:  # show/tv
-                data = self.tmdb_client.get_tv_details(item.tmdb_id)
+                data = self.tmdb_client.get_tv_details(tmdb_id)
             
             if not data:
                 logging.warning(f"No data found for {item.name}")
@@ -252,8 +320,8 @@ class MovieShowEnricher:
             # Process cast and crew
             credits = data.get('credits', {})
             
-            # Process actors (top 10)
-            cast = credits.get('cast', [])[:10]  # Limit to top 10 actors
+            # Process actors (top 5)
+            cast = credits.get('cast', [])[:5]  # Limit to top 5 actors
             for idx, actor in enumerate(cast, 1):
                 self.db_manager.insert_person(
                     primary_topic_id=item.primary_topic_id,
@@ -282,13 +350,13 @@ class MovieShowEnricher:
             logging.error(f"Error processing {item.name}: {str(e)}")
             return False
     
-    def run_enrichment(self, batch_size: int = 50):
+    def run_enrichment(self, batch_size: int = 50, test_ids: Optional[List[int]] = None):
         """Run the enrichment process"""
         try:
             self.db_manager.connect()
             
             # Get unprocessed items
-            items = self.db_manager.get_unprocessed_items()
+            items = self.db_manager.get_unprocessed_items(test_ids)
             
             if not items:
                 logging.info("No items to process")
@@ -352,11 +420,18 @@ def main():
     tmdb_client = TMDBClient(TMDB_TOKEN)
     enricher = MovieShowEnricher(db_manager, tmdb_client)
     
+    # TESTING: Uncomment and add specific IDs to test with limited data
+    # test_ids = [123, 456, 789]  # Replace with actual primary_topic_ids
+    test_ids = None  # Set to None for production
+    
     # Run enrichment
     start_time = datetime.now()
-    logging.info("Starting daily enrichment process")
+    if test_ids:
+        logging.info(f"Starting TEST enrichment process for IDs: {test_ids}")
+    else:
+        logging.info("Starting daily enrichment process")
     
-    enricher.run_enrichment()
+    enricher.run_enrichment(test_ids=test_ids)
     
     end_time = datetime.now()
     duration = end_time - start_time
