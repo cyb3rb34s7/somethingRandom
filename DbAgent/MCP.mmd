@@ -1,0 +1,26 @@
+graph LR
+    A[Schema Agent] --> B[Database MCP]
+    C[Query Agent] --> B
+    D[Impact Agent] --> E[Impact MCP]
+    F[Approval Agent] --> G[Approval MCP]
+    H[Execution Agent] --> I[Execution MCP]
+    
+    B --> J[inspect_schema]
+    B --> K[validate_query]
+    B --> L[execute_query]
+    B --> M[get_sample_data]
+    
+    E --> N[analyze_update_impact]
+    E --> O[analyze_delete_impact]
+    E --> P[estimate_affected_rows]
+    E --> Q[generate_rollback_plan]
+    
+    G --> R[create_approval_request]
+    G --> S[check_approval_status]
+    G --> T[notify_approvers]
+    G --> U[audit_decision]
+    
+    I --> V[execute_with_transaction]
+    I --> W[monitor_progress]
+    I --> X[create_backup]
+    I --> Y[execute_rollback]
