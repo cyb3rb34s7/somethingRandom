@@ -1,0 +1,35 @@
+flowchart TD
+    A[Start Operation] --> B[Monitor Execution]
+    
+    B --> C{Error Detected}
+    C -->|No| D[Continue]
+    C -->|Yes| E[Classify Error]
+    
+    E --> F{Error Type}
+    F -->|Syntax| G[Auto Fix SQL]
+    F -->|Permission| H[Request Access]
+    F -->|Integrity| I[Transaction Rollback]
+    F -->|System| J[Retry Operation]
+    
+    G --> K{Fix Valid}
+    K -->|Yes| D
+    K -->|No| L[Request User Help]
+    
+    H --> L
+    
+    I --> M{Data Consistent}
+    M -->|Yes| L
+    M -->|No| N[Restore Backup]
+    
+    J --> O{Max Retries}
+    O -->|No| B
+    O -->|Yes| P[Escalate to Admin]
+    
+    N --> L
+    L --> Q{User Decision}
+    Q -->|Retry| A
+    Q -->|Modify| R[Modify Query]
+    Q -->|Cancel| S[Cancel Operation]
+    
+    R --> A
+    D --> T[Operation Complete]
