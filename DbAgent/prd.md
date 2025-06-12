@@ -518,7 +518,603 @@ Tools Used:
 ├── escalate_approval() - Handle escalations
 └── audit_approval_decision() - Compliance tracking
 
-Approval Decision Factors:
+Approval Decision Tracking:
+├── Request submission with full context
+├── Approver assignment based on risk and expertise
+├── Real-time status updates and notifications
+├── Decision recording with justification
+├── Automatic execution upon approval
+├── Escalation handling for delays or rejections
+└── Complete audit trail for compliance
+```
+
+### **Feature 6: Safe SQL Execution**
+```
+Capability: Protected query execution with comprehensive monitoring
+Implementation:
+├── Transaction-wrapped execution for data consistency
+├── Resource monitoring and limit enforcement
+├── Real-time progress tracking and anomaly detection
+├── Automatic rollback on errors or violations
+└── Performance analysis and optimization suggestions
+
+Execution Safety Measures:
+├── Transaction Management:
+│   ├── BEGIN transaction before destructive operations
+│   ├── SAVEPOINT creation for complex multi-step operations
+│   ├── ROLLBACK on any error or integrity violation
+│   ├── COMMIT only after full validation and approval
+│   └── Transaction timeout to prevent long-running operations
+│
+├── Resource Monitoring:
+│   ├── CPU usage tracking and limits
+│   ├── Memory consumption monitoring
+│   ├── I/O bandwidth utilization
+│   ├── Lock contention detection
+│   └── Connection pool management
+│
+├── Query Limits:
+│   ├── Maximum execution time (configurable per risk level)
+│   ├── Result set size limits
+│   ├── Resource usage quotas
+│   ├── Concurrent query limits per user
+│   └── System load-based throttling
+│
+└── Integrity Verification:
+    ├── Foreign key constraint validation
+    ├── Check constraint verification
+    ├── Data type consistency checks
+    ├── Business rule validation
+    └── Referential integrity confirmation
+
+Execution Process Flow:
+1. Pre-execution validation and backup creation
+2. Transaction initiation with appropriate isolation level
+3. Query execution with real-time monitoring
+4. Progress tracking and anomaly detection
+5. Result validation and integrity verification
+6. Transaction commit or rollback based on validation
+7. Post-execution analysis and performance metrics
+8. User notification and result delivery
+```
+
+### **Feature 7: Rollback Strategy**
+```
+Capability: Comprehensive recovery mechanisms for failed operations
+Implementation:
+├── Multi-level rollback strategies based on operation complexity
+├── Automated backup creation before destructive operations
+├── Point-in-time recovery capabilities
+├── Integrity verification after rollback
+└── Recovery process documentation and audit trails
+
+Rollback Levels:
+├── Level 1 - Transaction Rollback:
+│   ├── Scope: Single query within active transaction
+│   ├── Method: ROLLBACK TO SAVEPOINT or full ROLLBACK
+│   ├── Speed: Immediate (< 1 second)
+│   ├── Use Case: Syntax errors, constraint violations
+│   └── Recovery: Automatic, no data loss
+│
+├── Level 2 - Backup Restoration:
+│   ├── Scope: Table or schema level changes
+│   ├── Method: Restore from pre-execution backup
+│   ├── Speed: Minutes to hours (depends on data size)
+│   ├── Use Case: Complex operations, data corruption
+│   └── Recovery: Manual trigger, validated restoration
+│
+├── Level 3 - Point-in-Time Recovery:
+│   ├── Scope: Database-wide issues or multiple operations
+│   ├── Method: Database restore from backup + WAL replay
+│   ├── Speed: Hours (depends on database size)
+│   ├── Use Case: System corruption, security incidents
+│   └── Recovery: DBA intervention, full system restore
+│
+└── Level 4 - Disaster Recovery:
+    ├── Scope: Complete system failure or corruption
+    ├── Method: Full system restoration from backups
+    ├── Speed: Hours to days
+    ├── Use Case: Hardware failure, catastrophic errors
+    └── Recovery: Full disaster recovery procedures
+
+Backup Strategy:
+├── Pre-execution Backups:
+│   ├── Table-level snapshots for targeted operations
+│   ├── Schema backups for structural changes
+│   ├── Transaction log capture for point-in-time recovery
+│   └── Metadata backup for configuration recovery
+│
+├── Backup Storage:
+│   ├── Local storage for immediate access
+│   ├── Remote storage for disaster recovery
+│   ├── Encrypted storage for sensitive data
+│   └── Versioned storage for multiple recovery points
+│
+├── Backup Validation:
+│   ├── Integrity verification of backup files
+│   ├── Restoration testing on non-production systems
+│   ├── Recovery time objective (RTO) validation
+│   └── Recovery point objective (RPO) compliance
+│
+└── Retention Policies:
+    ├── Transaction-level: 24 hours
+    ├── Table-level: 30 days
+    ├── Schema-level: 90 days
+    └── Full backups: 1 year (compliance requirement)
+
+Recovery Procedures:
+1. Error Detection and Classification
+2. Impact Assessment and Scope Determination
+3. Recovery Method Selection Based on Impact
+4. Backup Validation and Preparation
+5. Recovery Execution with Progress Monitoring
+6. Data Integrity Verification Post-Recovery
+7. System Validation and Performance Testing
+8. User Notification and Service Restoration
+9. Incident Documentation and Learning
+10. Process Improvement and Prevention Measures
+```
+
+---
+
+## 🛠️ Technology Stack Justification
+
+### **LangGraph as Core Orchestration Framework**
+
+#### **Why LangGraph Over Alternatives?**
+```
+LangGraph Advantages:
+├── Agent Orchestration:
+│   ├── Built-in support for multi-agent workflows
+│   ├── State management across agent interactions
+│   ├── Conditional routing based on agent outputs
+│   └── Error handling and retry mechanisms
+│
+├── Tool Integration:
+│   ├── Native MCP (Model Context Protocol) support
+│   ├── Seamless tool calling and result processing
+│   ├── Tool validation and error handling
+│   └── Dynamic tool selection based on context
+│
+├── Workflow Management:
+│   ├── Graph-based workflow definition
+│   ├── Parallel and sequential execution support
+│   ├── Conditional branching and decision points
+│   └── Workflow state persistence and recovery
+│
+├── Memory and Context:
+│   ├── Built-in memory management
+│   ├── Context passing between agents
+│   ├── Session and conversation tracking
+│   └── Long-term memory integration
+│
+└── Monitoring and Debugging:
+    ├── Workflow execution visualization
+    ├── Agent interaction tracing
+    ├── Performance monitoring and metrics
+    └── Debug mode for development and testing
+
+Comparison with Alternatives:
+├── vs. LangChain:
+│   ├── LangGraph: Better agent orchestration and state management
+│   ├── LangChain: More mature ecosystem but less structured workflows
+│   └── Decision: LangGraph for complex multi-agent coordination
+│
+├── vs. CrewAI:
+│   ├── LangGraph: More flexible workflow design and MCP integration
+│   ├── CrewAI: Simpler setup but limited customization
+│   └── Decision: LangGraph for enterprise-grade requirements
+│
+├── vs. AutoGen:
+│   ├── LangGraph: Better error handling and production readiness
+│   ├── AutoGen: Good for research but limited production features
+│   └── Decision: LangGraph for production deployment
+│
+└── vs. Custom Framework:
+    ├── LangGraph: Proven framework with community support
+    ├── Custom: Full control but significant development overhead
+    └── Decision: LangGraph to accelerate development and reduce risk
+```
+
+### **Supporting Technology Choices**
+
+#### **Backend Stack**
+```
+FastAPI (Web Framework):
+├── Reasons:
+│   ├── Async support for high-performance agent coordination
+│   ├── Automatic OpenAPI documentation for API clarity
+│   ├── Built-in data validation with Pydantic
+│   ├── WebSocket support for real-time user updates
+│   └── Excellent integration with Python AI/ML ecosystem
+│
+├── Alternatives Considered:
+│   ├── Django: Too heavy for API-focused microservices
+│   ├── Flask: Lacks async support and built-in validation
+│   └── Node.js: Less mature AI/ML library ecosystem
+│
+└── Decision: FastAPI for performance and AI ecosystem integration
+
+PostgreSQL (Database):
+├── Reasons:
+│   ├── Target database for the AI agent (obvious choice)
+│   ├── Advanced query optimization and planning features
+│   ├── Excellent JSON support for storing agent state
+│   ├── Full-text search capabilities for query similarity
+│   ├── Robust transaction support for safe operations
+│   └── pgvector extension for embedding storage
+│
+├── Alternatives Considered:
+│   ├── MySQL: Less advanced query optimization features
+│   ├── SQLite: Not suitable for production workloads
+│   └── MongoDB: Not ideal for relational data operations
+│
+└── Decision: PostgreSQL as both target and application database
+
+Redis (Caching & Session):
+├── Reasons:
+│   ├── High-performance caching for schema and query results
+│   ├── Session storage with automatic expiration
+│   ├── Pub/Sub capabilities for real-time notifications
+│   ├── Rate limiting and quota management
+│   └── Cluster support for high availability
+│
+├── Alternatives Considered:
+│   ├── Memcached: Limited data structures and persistence
+│   ├── In-memory Python: No persistence and limited scalability
+│   └── Database caching: Slower performance for frequent access
+│
+└── Decision: Redis for performance and feature richness
+```
+
+#### **AI/ML Stack**
+```
+Groq (Primary LLM Provider):
+├── Reasons:
+│   ├── Extremely fast inference speeds (< 100ms)
+│   ├── Cost-effective pricing for high-volume queries
+│   ├── Strong SQL generation capabilities with Mixtral/Llama
+│   ├── Reliable API with good uptime and support
+│   └── Free tier suitable for development and testing
+│
+├── Model Selection:
+│   ├── Mixtral-8x7B: Best balance of speed and capability
+│   ├── Llama-3-70B: Highest quality for complex queries
+│   └── Code-Llama: Specialized for SQL generation tasks
+│
+└── Backup Providers: Together.ai, OpenAI for redundancy
+
+pgvector (Embedding Storage):
+├── Reasons:
+│   ├── Native PostgreSQL extension for vector operations
+│   ├── Efficient similarity search for query matching
+│   ├── ACID compliance for embedding data integrity
+│   ├── No additional infrastructure requirements
+│   └── Seamless integration with existing PostgreSQL setup
+│
+├── Alternatives Considered:
+│   ├── Pinecone: External service with additional costs
+│   ├── Weaviate: Requires separate infrastructure
+│   └── FAISS: In-memory only, no persistence
+│
+└── Decision: pgvector for simplicity and integration
+```
+
+#### **Frontend Stack**
+```
+Next.js 14 (React Framework):
+├── Reasons:
+│   ├── Server-side rendering for better performance
+│   ├── API routes for backend integration
+│   ├── Built-in optimization and caching
+│   ├── Excellent TypeScript support
+│   └── Strong ecosystem and community support
+│
+├── Alternatives Considered:
+│   ├── Vanilla React: Requires additional tooling and setup
+│   ├── Vue.js: Smaller ecosystem for enterprise components
+│   └── Angular: Too heavy for this application type
+│
+└── Decision: Next.js for development speed and performance
+
+Tailwind CSS (Styling):
+├── Reasons:
+│   ├── Utility-first approach for rapid development
+│   ├── Built-in responsive design system
+│   ├── Dark mode support out of the box
+│   ├── Excellent component library ecosystem
+│   └── Minimal bundle size with purging
+│
+├── Alternatives Considered:
+│   ├── Material-UI: More opinionated design system
+│   ├── Styled-components: More verbose and complex
+│   └── Custom CSS: Slower development and maintenance
+│
+└── Decision: Tailwind for speed and flexibility
+
+Recharts (Data Visualization):
+├── Reasons:
+│   ├── React-native component integration
+│   ├── Good performance with large datasets
+│   ├── Responsive and accessible charts
+│   ├── Extensive customization options
+│   └── Active maintenance and community
+│
+├── Alternatives Considered:
+│   ├── D3.js: More powerful but complex implementation
+│   ├── Chart.js: Not React-native integration
+│   └── Plotly: Heavier bundle size
+│
+└── Decision: Recharts for React integration and simplicity
+```
+
+---
+
+## 📊 Component Architecture Diagram
+
+### **High-Level System Architecture**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         USER INTERFACE                          │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐    │
+│  │   Chat Interface │ │   Dashboard     │ │  Approval UI    │    │
+│  │   (Next.js)     │ │   (Analytics)   │ │  (Admin Panel)  │    │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘    │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │ WebSocket + HTTP API
+┌─────────────────────▼───────────────────────────────────────────┐
+│                      API GATEWAY                                │
+│                     (FastAPI)                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │              ORCHESTRATOR AGENT                        │   │
+│  │              (LangGraph Core)                          │   │
+│  │  ┌─────────────────────────────────────────────────┐   │   │
+│  │  │           Workflow Planner                      │   │   │
+│  │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐│   │   │
+│  │  │  │Intent   │ │Risk     │ │Agent    │ │Recovery ││   │   │
+│  │  │  │Analysis │ │Assessment│ │Routing  │ │Planning ││   │   │
+│  │  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘│   │   │
+│  │  └─────────────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │ Agent Communication Bus
+┌─────────────────────▼───────────────────────────────────────────┐
+│                 SPECIALIST AGENTS                               │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐│
+│  │Schema Context│ │Query Builder │ │Impact        │ │Approval  ││
+│  │Agent         │ │Agent         │ │Analysis      │ │Management││
+│  │              │ │              │ │Agent         │ │Agent     ││
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────┘│
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐│
+│  │Execution     │ │Memory        │ │Monitoring    │ │Error     ││
+│  │Management    │ │Context       │ │& Alerting    │ │Recovery  ││
+│  │Agent         │ │Agent         │ │Agent         │ │Agent     ││
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────┘│
+└─────────────────────┬───────────────────────────────────────────┘
+                      │ MCP Protocol
+┌─────────────────────▼───────────────────────────────────────────┐
+│                    MCP SERVERS                                  │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐│
+│  │Database      │ │Impact        │ │Approval      │ │Execution ││
+│  │Operations    │ │Analysis      │ │Workflow      │ │Monitor   ││
+│  │MCP           │ │MCP           │ │MCP           │ │MCP       ││
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────┘│
+└─────────────────────┬───────────────────────────────────────────┘
+                      │ Database Connections & External APIs
+┌─────────────────────▼───────────────────────────────────────────┐
+│                INFRASTRUCTURE LAYER                             │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐│
+│  │PostgreSQL    │ │Redis Cache   │ │Vector Store  │ │Message   ││
+│  │Primary DB    │ │Session &     │ │(pgvector)    │ │Queue     ││
+│  │              │ │Query Cache   │ │              │ │(Celery)  ││
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────┘│
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐│
+│  │AI Model APIs │ │Notification  │ │Backup        │ │Monitoring││
+│  │(Groq, etc.)  │ │Services      │ │Storage       │ │& Logging ││
+│  │              │ │(Slack, Email)│ │              │ │          ││
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### **Agent Interaction Flow Diagram**
+```
+User Query: "Update all product prices by 10% for category 'Electronics'"
+
+┌─────────────┐
+│   USER      │
+│   INPUT     │ "Update all product prices by 10%..."
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  ORCHESTRATOR AGENT                            │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ 1. Intent Analysis:                                     │   │
+│  │    - Operation: UPDATE                                  │   │
+│  │    - Entity: products.price                            │   │
+│  │    - Condition: category = 'Electronics'               │   │
+│  │    - Complexity: MEDIUM                                 │   │
+│  │    - Risk: HIGH (bulk update)                          │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ 2. Workflow Planning:                                   │   │
+│  │    ✓ Schema Context Required                            │   │
+│  │    ✓ Query Building Required                            │   │
+│  │    ✓ Impact Analysis Required (UPDATE operation)       │   │
+│  │    ✓ Approval Required (HIGH risk)                     │   │
+│  │    ✓ Safe Execution with Backup Required               │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└───────────────────────┬─────────────────────────────────────────┘
+                        │
+                        ▼
+        ┌───────────────────────────────────────────────┐
+        │          PARALLEL EXECUTION                   │
+        │                                               │
+        ▼                                               ▼
+┌─────────────────┐                           ┌─────────────────┐
+│ SCHEMA CONTEXT  │                           │ MEMORY CONTEXT  │
+│     AGENT       │                           │     AGENT       │
+│                 │                           │                 │
+│ 1. Inspect DB   │                           │ 1. Load session │
+│ 2. Find tables: │                           │ 2. User prefs   │
+│    - products   │                           │ 3. Query history│
+│    - categories │                           │ 4. Performance  │
+│ 3. Map relations│                           │    patterns     │
+│ 4. Get samples  │                           │                 │
+└─────────┬───────┘                           └─────────┬───────┘
+          │                                             │
+          └──────────────────┬──────────────────────────┘
+                             │
+                             ▼
+                   ┌─────────────────┐
+                   │ QUERY BUILDER   │
+                   │     AGENT       │
+                   │                 │
+                   │ 1. Generate SQL:│
+                   │ UPDATE products │
+                   │ SET price =     │
+                   │   price * 1.1   │
+                   │ WHERE category  │
+                   │   = 'Electronics'│
+                   │ 2. Optimize     │
+                   │ 3. Validate     │
+                   └─────────┬───────┘
+                             │
+                             ▼
+                   ┌─────────────────┐
+                   │ IMPACT ANALYSIS │
+                   │     AGENT       │
+                   │                 │
+                   │ 1. Estimate:    │
+                   │    ~2,500 rows  │
+                   │ 2. Check cascades│
+                   │ 3. Risk: HIGH   │
+                   │ 4. Backup plan │
+                   │ 5. Recovery time│
+                   └─────────┬───────┘
+                             │
+                             ▼
+                   ┌─────────────────┐
+                   │ APPROVAL        │
+                   │ MANAGEMENT AGENT│
+                   │                 │
+                   │ 1. Create ticket│
+                   │ 2. Route to mgr │
+                   │ 3. Send notifications│
+                   │ 4. Track status │
+                   │ 5. Await decision│
+                   └─────────┬───────┘
+                             │
+                   ┌─────────▼────────┐
+                   │ HUMAN APPROVER   │
+                   │                  │
+                   │ Reviews:         │
+                   │ - Query details  │
+                   │ - Impact analysis│
+                   │ - Business need  │
+                   │ - Risk assessment│
+                   │                  │
+                   │ ✓ APPROVED       │
+                   └─────────┬────────┘
+                             │
+                             ▼
+                   ┌─────────────────┐
+                   │ EXECUTION       │
+                   │ MANAGEMENT AGENT│
+                   │                 │
+                   │ 1. Create backup│
+                   │ 2. Begin txn    │
+                   │ 3. Execute SQL  │
+                   │ 4. Monitor      │
+                   │ 5. Verify       │
+                   │ 6. Commit       │
+                   └─────────┬───────┘
+                             │
+                             ▼
+                   ┌─────────────────┐
+                   │ ORCHESTRATOR    │
+                   │ RESPONSE        │
+                   │                 │
+                   │ ✓ Success!      │
+                   │ 2,487 rows      │
+                   │ updated         │
+                   │ Execution: 1.2s │
+                   │ Backup created  │
+                   └─────────┬───────┘
+                             │
+                             ▼
+                   ┌─────────────────┐
+                   │     USER        │
+                   │   RESPONSE      │
+                   └─────────────────┘
+```
+
+### **Data Flow Architecture**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       DATA FLOW LAYERS                         │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                INPUT PROCESSING                         │   │
+│  │  User Query → Validation → Context Loading → Intent    │   │
+│  │  Extraction → Entity Recognition → Classification      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                │                                │
+│                                ▼                                │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                AGENT COORDINATION                       │   │
+│  │  Workflow Planning → Agent Assignment → Task Execution │   │
+│  │  → Result Aggregation → Error Handling → Recovery     │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                │                                │
+│                                ▼                                │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                 DATA PROCESSING                         │   │
+│  │  Schema Discovery → Query Generation → Impact Analysis │   │
+│  │  → Approval Processing → Safe Execution → Validation   │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                │                                │
+│                                ▼                                │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                OUTPUT GENERATION                        │   │
+│  │  Result Formatting → Visualization → Performance       │   │
+│  │  Metrics → User Feedback → Session Update              │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+Data Persistence Points:
+├── Session State: Redis (temporary)
+├── User Context: PostgreSQL (persistent)
+├── Query History: PostgreSQL (audit trail)
+├── Schema Cache: Redis (with TTL)
+├── Approval Records: PostgreSQL (compliance)
+├── Execution Logs: PostgreSQL (monitoring)
+├── Performance Metrics: Time-series DB (analytics)
+└── Backup Data: Object Storage (recovery)
+```
+
+This completes our comprehensive MVP PRD with full agentic architecture planning. The document covers every aspect needed before implementation:
+
+## 🎯 **Ready for Implementation**
+
+**Key Decisions Made:**
+1. **6 Specialized Agents** with clear responsibilities
+2. **4 MCP Servers** providing focused tool sets
+3. **LangGraph** as the orchestration framework
+4. **Risk-based approval** workflows with human oversight
+5. **Multi-level rollback** strategies for safety
+6. **Comprehensive monitoring** and audit capabilities
+
+**Implementation Priority:**
+1. Start with Database Operations MCP + Schema Context Agent
+2. Add Query Builder Agent with basic SQL generation
+3. Implement Impact Analysis for UPDATE/DELETE operations
+4. Build Approval Workflow with notification system
+5. Add Safe Execution with transaction management
+6. Implement rollback mechanisms and recovery procedures
+
+Ready to begin coding the first component? Factors:
 ├── Operation risk level and potential impact
 ├── Data sensitivity and regulatory requirements
 ├── User authorization level and track record
