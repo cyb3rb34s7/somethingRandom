@@ -1,0 +1,28 @@
+flowchart TD
+    A[User Input] --> B{Query Type}
+    
+    B -->|SELECT| C[Simple Flow]
+    B -->|UPDATE DELETE| D[Complex Flow]
+    
+    C --> E[Schema Context]
+    D --> E
+    
+    E --> F[Query Generation]
+    
+    F --> G{Risk Level}
+    
+    G -->|LOW| H[Direct Execution]
+    G -->|HIGH| I[Impact Analysis]
+    
+    I --> J[Approval Process]
+    J --> K{Approved}
+    
+    K -->|Yes| L[Safe Execution]
+    K -->|No| M[Request Denied]
+    
+    H --> N[Process Results]
+    L --> N
+    
+    N --> O[User Response]
+    M --> P[Suggest Alternatives]
+    P --> O
