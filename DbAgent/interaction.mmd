@@ -1,0 +1,40 @@
+sequenceDiagram
+    participant User
+    participant API
+    participant Orchestrator
+    participant SchemaAgent
+    participant QueryAgent
+    participant ImpactAgent
+    participant ApprovalAgent
+    participant ExecutionAgent
+    participant Database
+
+    User->>API: Submit Query
+    API->>Orchestrator: Process Request
+    Orchestrator->>Orchestrator: Analyze Intent
+    
+    Orchestrator->>SchemaAgent: Get Schema Context
+    SchemaAgent->>Database: Query Schema
+    Database-->>SchemaAgent: Schema Data
+    SchemaAgent-->>Orchestrator: Context Ready
+    
+    Orchestrator->>QueryAgent: Generate SQL
+    QueryAgent->>QueryAgent: Build SQL
+    QueryAgent-->>Orchestrator: SQL Ready
+    
+    Orchestrator->>ImpactAgent: Analyze Impact
+    ImpactAgent->>Database: Check Dependencies
+    Database-->>ImpactAgent: Impact Data
+    ImpactAgent-->>Orchestrator: Impact Analysis
+    
+    Orchestrator->>ApprovalAgent: Request Approval
+    ApprovalAgent->>ApprovalAgent: Route to Approver
+    ApprovalAgent-->>Orchestrator: Approval Granted
+    
+    Orchestrator->>ExecutionAgent: Execute Query
+    ExecutionAgent->>Database: Safe Execution
+    Database-->>ExecutionAgent: Results
+    ExecutionAgent-->>Orchestrator: Execution Complete
+    
+    Orchestrator->>API: Format Response
+    API-->>User: Return Results
