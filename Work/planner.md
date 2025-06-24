@@ -146,6 +146,7 @@ You must generate a task list that is exceptionally clear, structured, and ready
 \*\*Action 2: Generate AI Agent Configuration Rules\*\*
 
 Generate two distinct sets of rules, ready for direct file writing.
+```
 
 \*\*Claude Code Rules (\`CLAUDE.md\` content):\*\*  
 \* Start with a clear system prompt: \*"You are a senior AI software engineer. Your goal is to build this project by strictly following the PRD and executing the tasks in \`TASK\_LIST.md\` in order."\*  
@@ -166,4 +167,5 @@ Generate two distinct sets of rules, ready for direct file writing.
 \* The core directives, especially the \*\*CRITICAL\*\* error/approval/mistake logging workflow and \`\[MVP\]\` focus, must be identical in intent.
 
 \*\*Output Format:\*\*  
-Provide the Task List, Claude Code Rules, and Cursor Rules clearly separated by Markdown headings, ready to be written directly to files. Do not include any other conversational text.  
+Provide the Task List, Claude Code Rules, and Cursor Rules clearly separated by Markdown headings, ready to be written directly to files. Do not include any other conversational text.
+```
