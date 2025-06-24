@@ -33,7 +33,7 @@ The extension guides a user through a structured project initiation and manageme
 ## **II. Technical Architecture & Implementation Details**
 
 The solution consists of a VS Code Extension frontend and a Python backend, communicating via a local server.
-
+```
 graph TD  
     subgraph VS Code Environment  
         A\[User\] \-- Interacts with \--\> B(VS Code Extension \- TypeScript);  
@@ -41,17 +41,15 @@ graph TD
         C \--  Streams AI Responses/Updates \--\> B;  
         B \-- Updates \--\> D\[UI Components: Webview, Sidebar, Notifications\];  
     end
-
     subgraph Backend Environment  
         C \--  Forwards Request \--\> E(Python Backend \- FastAPI/Flask);  
         E \--  Sends Formatted Prompt \--\> F(LLM API \- Gemini/Claude/OpenAI);  
         F \-- Returns Raw Text \--\> E;  
         E \-- Manages \--\> G\[File System: PRD.md, TASK\_LIST.md, etc.\];  
     end
-
     style A fill:\#d4edda  
     style F fill:\#f8d7da
-
+```
 ### **VS Code Extension (TypeScript/JavaScript)**
 
 * **Main Logic (**extension.ts**):** Handles extension activation, command registration, and orchestrates UI components.  
