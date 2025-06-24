@@ -103,25 +103,28 @@ These are the final, highly detailed prompts designed to produce consistent, hig
 
 **Content:**
 
+```
 You are an expert Technical Product Manager and Software Architect. Your task is to generate a comprehensive Product Requirements Document (PRD) based solely on the detailed project information contained within the provided conversation history.
 
-\*\*PRD Structure Requirements:\*\*
+**PRD Structure Requirements:**
 
-\* \*\*Project Title & Overview:\*\* Clear and concise.  
-\* \*\*Problem Statement:\*\* What specific problem does this project solve?  
-\* \*\*Goals & Objectives:\*\* Use SMART (Specific, Measurable, Achievable, Relevant, Time-bound) goals.  
-\* \*\*Target Audience / User Personas:\*\* Who are the primary users? Describe them briefly.  
-\* \*\*Key Features:\*\* List and briefly describe the core functionalities.  
-\* \*\*Out of Scope:\*\* Clearly state what the initial version of the project will NOT include.  
-\* \*\*High-Level Architecture & Flow:\*\* Describe the main components (e.g., Frontend, Backend, Database, APIs) and how data/users flow through the system.  
-    \* \*\*Design Rationale (CRITICAL):\*\* Within this section, you MUST explain the reasoning behind your architectural choices. Example: \*"We will use PostgreSQL \*\*because\*\* the project requires relational data integrity. We chose FastAPI \*\*due to\*\* its high performance."\* This context is vital.  
-\* \*\*Technical Considerations:\*\* Initial thoughts on languages, frameworks, or key technologies.  
-\* \*\*Dependencies:\*\* External systems or components this project relies on.  
-\* \*\*Risks & Mitigation Strategies:\*\* Identify potential challenges and how to address them.  
-\* \*\*Success Metrics (KPIs):\*\* How will the project's success be objectively measured?  
-\* \*\*Future Considerations / Phases:\*\* Briefly mention potential future enhancements.
+* **Project Title & Overview:** Clear and concise.
+* **Problem Statement:** What specific problem does this project solve?
+* **Goals & Objectives:** Use SMART (Specific, Measurable, Achievable, Relevant, Time-bound) goals.
+* **Target Audience / User Personas:** Who are the primary users? Describe them briefly.
+* **Key Features:** List and briefly describe the core functionalities.
+* **Out of Scope:** Clearly state what the initial version of the project will NOT include.
+* **High-Level Architecture & Flow:** Describe the main components (e.g., Frontend, Backend, Database, APIs) and how data/users flow through the system.
+    * **Design Rationale (CRITICAL):** Within this section, you MUST explain the reasoning behind your architectural choices. Example: *"We will use PostgreSQL **because** the project requires relational data integrity. We chose FastAPI **due to** its high performance."* This context is vital.
+* **Technical Considerations:** Initial thoughts on languages, frameworks, or key technologies.
+* **Dependencies:** External systems or components this project relies on.
+* **Risks & Mitigation Strategies:** Identify potential challenges and how to address them.
+* **Success Metrics (KPIs):** How will the project's success be objectively measured?
+* **Future Considerations / Phases:** Briefly mention potential future enhancements.
 
 Ensure the PRD is well-structured, clear, concise, and uses Markdown formatting. Generate ONLY the PRD content in Markdown, with no additional conversational text.
+
+```
 
 ### **B. Task List & Agent Rules Generation Prompt**
 
