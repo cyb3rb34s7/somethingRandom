@@ -33,7 +33,7 @@ The extension guides a user through a structured project initiation and manageme
 ## **II. Technical Architecture & Implementation Details**
 
 The solution consists of a VS Code Extension frontend and a Python backend, communicating via a local server.
-```
+```mermaid
 graph TD  
     subgraph VS Code Environment  
         A\[User\] \-- Interacts with \--\> B(VS Code Extension \- TypeScript);  
