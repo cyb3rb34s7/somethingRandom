@@ -1,48 +1,96 @@
 Arcase Planner VS Code Extension: Finalized Project Plan
-This document outlines the complete, refined plan for the Arcase Planner VS Code extension. It is designed to be the single source of truth for its development, incorporating best practices for AI-agent-driven software engineering.
+This document is the single source of truth for the Arcase Planner VS Code extension. It outlines the complete project plan, from user workflow and technical architecture to the specific AI prompts required for its operation, incorporating best practices for AI-agent-driven software engineering.
 
 I. Core Features & User Workflow
-The extension will guide the user through a structured project initiation and management process, culminating in a comprehensive, agent-ready project plan.
+The extension guides a user through a structured project initiation and management process, from a raw idea to a complete, agent-ready project plan.
 
-Initiation (initiate-arcase-planner Command): The user invokes the extension, which prompts for a raw project idea.
+Initiation (initiate-arcase-planner Command)
 
-Idea Enhancement & Iterative Q&A: An "AI Project Manager" LLM enhances the idea and asks clarifying questions via a VS Code Webview or Quick Pick interface to build a detailed understanding.
+Invocation: The user invokes the extension via a VS Code command.
 
-PRD (Product Requirements Document) Generation:
+Prompt: A Quick Pick input box appears: "Welcome to Arcase Planner! Let's start with your raw project idea. What do you want to build, and what problem does it solve?"
 
-Based on the refined idea, the LLM generates a comprehensive PRD.md.
+Idea Enhancement & Iterative Q&A (AI-Assisted)
 
-Key Feature: The PRD will include a "Design Rationale" section, explaining why architectural decisions were made.
+AI Enhancement: The raw idea is sent to a backend LLM (acting as an "AI Project Manager"), which enhances it and identifies ambiguities.
 
-The PRD is automatically opened for user review and approval.
+Iterative Q&A: The LLM generates clarifying questions (e.g., "Who are the target users?"), presented via a VS Code Webview or sequential Quick Picks.
 
-PRD Finalization & Task Generation:
+Refinement: Each user response is fed back to the LLM, which refines its understanding and asks follow-up questions as needed.
 
-The user signals that the PRD is finalized.
+Confirmation: Once sufficient information is gathered, the LLM presents a summary and asks for confirmation to proceed with PRD generation.
 
-The LLM then generates a TASK_LIST.md and agent-specific rule files (CLAUDE.md or .cursor/).
+PRD (Product Requirements Document) Generation
 
-Key Features:
+Notification: The user is notified: "Great! I'm now working on generating your comprehensive Product Requirements Document (PRD)..."
+
+LLM Generation: The LLM uses the full conversation history to generate PRD.md, including the critical "Design Rationale" section explaining why architectural decisions were made.
+
+File Creation & Auto-Open: The PRD.md file is created and automatically opened in a new VS Code tab for immediate user review.
+
+PRD Finalization & Task Generation
+
+Finalization Signal: The user signals that the PRD is finalized via a command or a UI button.
+
+LLM Generation: The finalized PRD content is sent to the LLM to generate the TASK_LIST.md and agent-specific rule files (CLAUDE.md, .cursor/index.mdc).
+
+Key Task List Features:
 
 Tasks are categorized as [MVP] or [Future].
 
 Tasks include explicit Acceptance Criteria.
 
-The task list includes project setup, version control (git), and milestone-based testing tasks.
+The list includes tasks for git setup, environment configuration, and milestone-based testing.
 
-Project Monitoring & Interaction:
+Project Monitoring & Interaction
 
-A dedicated VS Code sidebar displays the task list from TASK_LIST.md.
+Sidebar View: A dedicated "Arcase Tasks" sidebar parses and displays TASK_LIST.md with clear progress indicators.
 
-The extension watches APPROVAL_QUEUE.md and notifies the user of requests needing human review.
+Quick Access: The sidebar provides links to quickly open all meta-files (PRD.md, MISTAKE_LOG.md, etc.).
 
-The user can quickly access all meta-files (PRD.md, CONTEXT.md, MISTAKE_LOG.md, etc.).
+Approval Workflow: The extension watches APPROVAL_QUEUE.md for new entries. When a request is detected, a VS Code notification alerts the user, allowing for quick review and response.
 
-II. Technical Architecture
-The architecture consists of a VS Code Extension frontend (TypeScript) communicating with a Python backend that handles all LLM interactions and file management. Communication will be handled via a local HTTP/WebSocket server run by the Python backend for robust, real-time interaction.
+II. Technical Architecture & Implementation Details
+The solution consists of a VS Code Extension frontend and a Python backend, communicating via a local server.
+
+graph TD
+    subgraph VS Code Environment
+        A[User] -- Interacts with --> B(VS Code Extension - TypeScript);
+        B -- Sends User Input --> C{Local HTTP/WebSocket Server};
+        C --  Streams AI Responses/Updates --> B;
+        B -- Updates --> D[UI Components: Webview, Sidebar, Notifications];
+    end
+
+    subgraph Backend Environment
+        C --  Forwards Request --> E(Python Backend - FastAPI/Flask);
+        E --  Sends Formatted Prompt --> F(LLM API - Gemini/Claude/OpenAI);
+        F -- Returns Raw Text --> E;
+        E -- Manages --> G[File System: PRD.md, TASK_LIST.md, etc.];
+    end
+
+    style A fill:#d4edda
+    style F fill:#f8d7da
+
+VS Code Extension (TypeScript/JavaScript)
+Main Logic (extension.ts): Handles extension activation, command registration, and orchestrates UI components.
+
+UI Management: Manages Webviews for interactive Q&A and a TreeView for the "Arcase Tasks" sidebar.
+
+File System Watchers: Uses vscode.workspace.createFileSystemWatcher to monitor changes to meta-files (APPROVAL_QUEUE.md, TASK_LIST.md) and trigger UI updates or notifications.
+
+Backend Communication: Implements a client to communicate with the Python backend via a local HTTP/WebSocket server. This is more robust for long-running, real-time interactions than a simple child process.
+
+Python Backend
+LLM Integration: Acts as the core AI brain, using official client libraries (e.g., google-generativeai) to handle prompt engineering for each stage of the workflow.
+
+File Management: Contains robust functions for creating, reading, and writing all project meta-files.
+
+Rule Generation: Dynamically generates the precise Markdown content for CLAUDE.md and Cursor's .mdc files.
+
+Local Server: Exposes a lightweight server (e.g., using FastAPI) to receive requests from the VS Code extension and stream back responses.
 
 III. Project Workspace File Structure
-The extension will create and manage the following meta-file structure in the user's workspace:
+The extension creates and manages the following meta-file structure in the user's workspace:
 
 my_project/
 ├── .vscode/
@@ -59,7 +107,18 @@ my_project/
 ├── APPROVAL_QUEUE.md         # File for AI to request human approval
 └── MISTAKE_LOG.md            # A global log of solved problems and learnings
 
-IV. Core LLM Prompts (The Engine of the Planner)
+IV. Key Implementation Considerations
+LLM Token Management: For complex projects, the conversation history will be summarized before being sent in subsequent prompts to stay within the LLM's context window.
+
+User Experience (UX): The UI will be designed to be intuitive, with clear instructions and non-blocking feedback during LLM generation.
+
+Error Handling: The extension will have robust internal error handling for LLM API failures, network issues, and unexpected responses.
+
+Security: API keys will be handled securely using VS Code's SecretStorage API or environment variables, never hardcoded.
+
+Version Control: The user will be encouraged to commit all meta-files to Git to preserve project history and agent context.
+
+V. Core LLM Prompts
 These are the final, highly detailed prompts designed to produce consistent, high-quality, and agent-compatible artifacts.
 
 A. PRD Generation Prompt
