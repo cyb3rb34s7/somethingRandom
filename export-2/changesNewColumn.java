@@ -1,19 +1,57 @@
 // ========================================
-// CHANGE 1: Add dual-nature fields constant
+// STEP 1: Add constants at the top of AssetExportService class
 // ========================================
 public class AssetExportService {
     
-    // Add this constant at the top of your class
+    // Dual-nature fields that can appear as both simple and array
     private static final Set<String> DUAL_NATURE_FIELDS = Set.of(
         "availableStarting", 
         "availableEnding",
         "expiryDate",
         "licenseId"
-        // Add other dual-nature fields as needed
     );
 
+    // Fields that appear in full export (ordered by groups)
+    private static final String[] FULL_EXPORT_FIELDS = {
+        // ASSET_BASIC_INFORMATION group
+        "contentId", "assetId", "type", "countryCode", "mainTitle", "language", 
+        "shortTitle", "runningTime", "adTag", "streamUri", "description",
+        "tiName", "showTitle", "seasonTitle", "showId", "seasonId", 
+        "seasonNo", "episodeNo", "vcCpId",
+        
+        // ASSET_DETAILS group  
+        "releaseDate", "genres", "body", "ratings", "starring", "expiryDate",
+        
+        // CAST_DETAILS group
+        "role", "name", "characterName",
+        
+        // ASSET_SPECIFICATION group
+        "deeplinkPayload", "chapterTime", "chapterDescription", "audioLang", 
+        "subtitleLang", "drm", "quality", "scenePreviewUrl",
+        
+        // EXTERNAL_IDS group
+        "externalProgramId", "provider", "idType", "externalIdProvider", 
+        "onDeviceTrans", "liveOnDevice",
+        
+        // LICENSE_DETAILS group
+        "availableStarting", "availableEnding", "contentPartner", "contentTier",
+        "status", "dbStatus", "regDate", "updateDate", "qcPassReason"
+    };
+
     // ========================================
-    // CHANGE 2: Update buildRowData method
+    // STEP 2: Update ZipExportContext setupFullExport method
+    // ========================================
+    // In ZipExportContext.java, replace the setupFullExport method:
+    
+    public void setupFullExport() {
+        this.isSelectiveExport = false;
+        this.selectedColumns = new ArrayList<>();
+        // Use the hardcoded full export fields instead of config
+        this.fieldsToProcess = AssetExportService.FULL_EXPORT_FIELDS;
+    }
+
+    // ========================================
+    // STEP 3: Completely replace buildRowData method
     // ========================================
     private Map<String, String> buildRowData(JsonNode asset, int arrayIndex,
         ZipExportContext context) {
@@ -26,7 +64,7 @@ public class AssetExportService {
                 rowData.put(fieldName, value);
             }
         } else {
-            // FULL EXPORT: Use existing FieldMappingConfig logic
+            // FULL EXPORT: Use FULL_EXPORT_FIELDS with FieldMappingConfig
             String[] fieldsToProcess = context.getFieldsToProcess();
             
             for (String fieldName : fieldsToProcess) {
@@ -37,6 +75,7 @@ public class AssetExportService {
                     String value = extractValueBasedOnType(asset, fieldName, metadata, arrayIndex, context);
                     rowData.put(fieldName, value);
                 } else {
+                    // For fields not in config, treat as simple
                     String value = getSimpleValueForUnknownField(asset, fieldName, arrayIndex);
                     rowData.put(fieldName, value);
                 }
@@ -47,16 +86,16 @@ public class AssetExportService {
     }
 
     // ========================================
-    // CHANGE 3: Add new method for selective export field extraction
+    // STEP 4: Add selective export field extraction method
     // ========================================
     private String extractSimpleFieldForSelective(JsonNode asset, String fieldName, int arrayIndex) {
         if (arrayIndex > 0) {
-            return ""; // Selective export only uses first row for simple fields
+            return ""; // Selective export only uses first row
         }
 
         JsonNode value = asset.get(fieldName);
         if (value == null || value.isNull()) {
-            // If simple field not found and it's a dual-nature field, try array fallback
+            // If simple field not found and it's dual-nature, try array fallback
             if (DUAL_NATURE_FIELDS.contains(fieldName)) {
                 return tryArrayFallbackForSelective(asset, fieldName);
             }
@@ -65,7 +104,6 @@ public class AssetExportService {
 
         String stringValue = value.asText();
         
-        // Apply date formatting if needed
         if (isDateField(fieldName) && stringValue.contains("T")) {
             return formatDateField(stringValue);
         }
@@ -74,10 +112,9 @@ public class AssetExportService {
     }
 
     // ========================================
-    // CHANGE 4: Add array fallback for selective export
+    // STEP 5: Add array fallback for selective export
     // ========================================
     private String tryArrayFallbackForSelective(JsonNode asset, String fieldName) {
-        // Try to find this field in known array structures
         ExportFieldMappingConfig.FieldMetadata metadata = 
             ExportFieldMappingConfig.FIELD_CONFIG.get(fieldName);
             
@@ -101,7 +138,7 @@ public class AssetExportService {
     }
 
     // ========================================
-    // CHANGE 5: Update extractValueBasedOnType method signature and logic
+    // STEP 6: Update extractValueBasedOnType method signature and logic
     // ========================================
     private String extractValueBasedOnType(JsonNode asset, String fieldName,
         ExportFieldMappingConfig.FieldMetadata metadata, int arrayIndex, 
@@ -130,14 +167,14 @@ public class AssetExportService {
     }
 
     // ========================================
-    // CHANGE 6: Add dual-nature field handling for full export
+    // STEP 7: Add dual-nature field handling for full export
     // ========================================
     private String extractDualNatureFieldForFull(JsonNode asset, String fieldName,
         ExportFieldMappingConfig.FieldMetadata metadata, int arrayIndex) {
         
         String result = "";
         
-        // FULL EXPORT: Array fields first (as per your API contract), simple fallback
+        // FULL EXPORT: Array fields first, simple fallback
         if (metadata.type == ExportFieldMappingConfig.FieldType.ARRAY) {
             result = tryArrayExtraction(asset, metadata, arrayIndex);
             
@@ -156,11 +193,11 @@ public class AssetExportService {
     }
 
     // ========================================
-    // CHANGE 7: Add helper extraction methods
+    // STEP 8: Add helper extraction methods
     // ========================================
     private String trySimpleExtraction(JsonNode asset, String fieldName, int arrayIndex) {
         if (arrayIndex > 0) {
-            return ""; // Simple fields only appear in first row
+            return "";
         }
         
         JsonNode value = asset.get(fieldName);
@@ -203,25 +240,29 @@ public class AssetExportService {
     }
 
     // ========================================
-    // CHANGE 8: Update createColumnHeaders method
+    // STEP 9: Update createColumnHeaders method
     // ========================================
     private int createColumnHeaders(Sheet sheet, int rowIndex, ZipExportContext context) {
         Row row = sheet.createRow(rowIndex);
 
         if (context.isSelectiveExport()) {
-            // SELECTIVE EXPORT: Use raw field names as column headers
+            // SELECTIVE EXPORT: Use formatted field names as headers
             List<String> selectedColumns = context.getSelectedColumns();
             for (int i = 0; i < selectedColumns.size(); i++) {
                 Cell cell = row.createCell(i);
                 String fieldName = selectedColumns.get(i);
                 
-                // Format field name for display (convert camelCase to readable)
-                String columnHeader = formatFieldNameForDisplay(fieldName);
+                // Try to get display name from config, fallback to formatted name
+                ExportFieldMappingConfig.FieldMetadata metadata = 
+                    ExportFieldMappingConfig.FIELD_CONFIG.get(fieldName);
+                String columnHeader = metadata != null ? metadata.columnName : 
+                                    formatFieldNameForDisplay(fieldName);
+                
                 cell.setCellValue(columnHeader);
                 cell.setCellStyle(context.getColumnHeaderStyle());
             }
         } else {
-            // FULL EXPORT: Use existing FieldMappingConfig logic
+            // FULL EXPORT: Use FieldMappingConfig display names
             String[] fields = context.getFieldsToProcess();
             for (int i = 0; i < fields.length; i++) {
                 Cell cell = row.createCell(i);
@@ -237,7 +278,7 @@ public class AssetExportService {
     }
 
     // ========================================
-    // CHANGE 9: Add helper method for formatting field names
+    // STEP 10: Add helper method for formatting field names
     // ========================================
     private String formatFieldNameForDisplay(String fieldName) {
         if (fieldName == null || fieldName.isEmpty()) {
@@ -245,14 +286,12 @@ public class AssetExportService {
         }
         
         // Convert camelCase to readable format
-        // e.g., "availableStarting" -> "Available Starting"
-        return fieldName.replaceAll("([a-z])([A-Z])", "$1 $2")
-                       .substring(0, 1).toUpperCase() + 
-                       fieldName.replaceAll("([a-z])([A-Z])", "$1 $2").substring(1);
+        String formatted = fieldName.replaceAll("([a-z])([A-Z])", "$1 $2");
+        return formatted.substring(0, 1).toUpperCase() + formatted.substring(1);
     }
 
     // ========================================
-    // CHANGE 10: Update createExcelRow method
+    // STEP 11: Update createExcelRow method
     // ========================================
     private void createExcelRow(Sheet sheet, Map<String, String> rowData,
         int rowIndex, ZipExportContext context) {
@@ -268,7 +307,7 @@ public class AssetExportService {
                 cell.setCellValue(value != null ? value : "");
             }
         } else {
-            // FULL EXPORT: Use configured fields order
+            // FULL EXPORT: Use full export fields order
             String[] fields = context.getFieldsToProcess();
             for (int i = 0; i < fields.length; i++) {
                 Cell cell = row.createCell(i);
@@ -280,7 +319,7 @@ public class AssetExportService {
     }
 
     // ========================================
-    // CHANGE 11: Update addBottomBorderToRow method  
+    // STEP 12: Update addBottomBorderToRow method
     // ========================================
     private void addBottomBorderToRow(Sheet sheet, int rowIndex, ZipExportContext context) {
         Row row = sheet.getRow(rowIndex);
@@ -300,4 +339,24 @@ public class AssetExportService {
             }
         }
     }
+
+    // ========================================
+    // STEP 13: Update all calls to extractValueBasedOnType
+    // ========================================
+    // Find any other calls to extractValueBasedOnType in your code and add the context parameter
+    // The signature is now: extractValueBasedOnType(asset, fieldName, metadata, arrayIndex, context)
 }
+
+// ========================================
+// STEP 14: Reorganize your ExportFieldMappingConfig
+// ========================================
+// In ExportFieldMappingConfig.java, reorganize the FIELD_CONFIG entries to group fields by their groups:
+
+// Group all ASSET_BASIC_INFORMATION fields together
+// Group all ASSET_DETAILS fields together  
+// Group all CAST_DETAILS fields together
+// Group all ASSET_SPECIFICATION fields together
+// Group all EXTERNAL_IDS fields together
+// Group all LICENSE_DETAILS fields together
+
+// This ensures group headers span the correct columns
