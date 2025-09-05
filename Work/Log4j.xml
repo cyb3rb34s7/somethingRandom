@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="LOG_PATTERN">
+            {
+                "timestamp": "$${date:yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
+                "level": "$${level}",
+                "traceId": "$${ctx:traceId:-}",
+                "service": "cms-monitoring-service",
+                "operation": "$${ctx:operation:-}",
+                "sourceService": "$${ctx:sourceService:-}",
+                "environment": "$${ctx:environment:-}",
+                "region": "$${ctx:region:-}",
+                "errorType": "$${ctx:errorType:-}",
+                "success": "$${ctx:success:-}",
+                "duration": "$${ctx:duration:-}",
+                "retryAttempt": "$${ctx:retryAttempt:-}",
+                "logger": "$${logger}",
+                "thread": "$${thread}",
+                "message": "$${message}",
+                "exception": "$${exception:short}"
+            }
+        </Property>
+    </Properties>
+
+    <Appenders>
+        <!-- Console Appender with JSON format -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
+        </Console>
+
+        <!-- File Appender with JSON format -->
+        <RollingFile name="FileAppender"
+                     fileName="logs/cms-monitoring.log"
+                     filePattern="logs/cms-monitoring-%d{yyyy-MM-dd}-%i.log.gz">
+            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Your application logger -->
+        <AsyncLogger name="com.cms_monitoring_system" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </AsyncLogger>
+
+        <!-- Spring Boot loggers -->
+        <Logger name="org.springframework" level="WARN"/>
+        <Logger name="org.apache.http" level="WARN"/>
+
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>
