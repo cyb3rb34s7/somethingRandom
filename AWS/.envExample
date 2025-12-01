@@ -1,0 +1,13 @@
+# .env file
+
+# AWS Credentials (Copy these from your Keycloak/SSO portal)
+AWS_ACCESS_KEY_ID=ASIA...
+AWS_SECRET_ACCESS_KEY=wJalr...
+AWS_SESSION_TOKEN=IQoJ...
+AWS_REGION=us-east-1
+
+# API Gateway Configuration
+DEV_API_ID=am78gt7609
+LOCAL_API_ID=your_local_api_id
+
+pip install boto3 python-dotenv
