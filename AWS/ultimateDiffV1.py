@@ -10,238 +10,239 @@ from botocore.exceptions import ClientError
 # --- 1. APP CONFIG & STYLING ---
 st.set_page_config(page_title="InfraAudit Pro", page_icon="🛡️", layout="wide")
 
-# Disable SSL Warnings for your Corporate Proxy
+# Disable SSL Warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Custom CSS for a cleaner look
-st.markdown("""
-<style>
-    .main { padding-top: 1rem; }
-    h1 { color: #2C3E50; }
-    .stButton>button { width: 100%; border-radius: 5px; height: 3em; }
-    div[data-testid="stExpander"] { border: 1px solid #ddd; border-radius: 8px; }
+# --- 2. CORE LOGIC: DEEP COMPARISON FOR REPORT ---
+def get_structural_diffs(d1, d2, path=""):
+    """
+    Recursively compares two dictionaries/lists and returns a list of text explanations.
+    Used for the Detailed Text Report.
+    """
+    diffs = []
     
-    /* Diff Table Styling */
-    table.diff {
-        font-family: 'Consolas', 'Monaco', monospace; 
-        font-size: 12px; 
-        width: 100%; 
-        border-collapse: collapse; 
-    }
-    .diff th { background-color: #f8f9fa; padding: 8px; border-bottom: 2px solid #ddd; text-align: left; }
-    .diff td { padding: 4px 8px; border-bottom: 1px solid #eee; word-break: break-all; }
-    .diff_add { background-color: #e6ffec; color: #155724; } /* Green for Added */
-    .diff_chg { background-color: #fff3cd; color: #856404; } /* Yellow for Changed */
-    .diff_sub { background-color: #ffeef0; color: #721c24; } /* Red for Removed */
-    .diff_header { color: #999; background-color: #f1f1f1; }
-</style>
-""", unsafe_allow_html=True)
+    # Compare Dictionaries
+    if isinstance(d1, dict) and isinstance(d2, dict):
+        all_keys = set(d1.keys()) | set(d2.keys())
+        for key in sorted(all_keys):
+            new_path = f"{path}.{key}" if path else key
+            if key not in d1:
+                diffs.append(f"[ADDED] {new_path}: {d2[key]}")
+            elif key not in d2:
+                diffs.append(f"[REMOVED] {new_path}")
+            else:
+                diffs.extend(get_structural_diffs(d1[key], d2[key], new_path))
+    
+    # Compare Lists (Naive comparison by index for simple reports)
+    elif isinstance(d1, list) and isinstance(d2, list):
+        if d1 != d2:
+            # If lists are short, show them; if objects, dig deeper if lengths match
+            if len(d1) == len(d2):
+                for i, (item1, item2) in enumerate(zip(d1, d2)):
+                    diffs.extend(get_structural_diffs(item1, item2, f"{path}[{i}]"))
+            else:
+                diffs.append(f"[MODIFIED LIST] {path}\n      Source: {d1}\n      Target: {d2}")
+    
+    # Compare Values
+    else:
+        if d1 != d2:
+            diffs.append(f"[CHANGE] {path}\n      Source: {d1}\n      Target: {d2}")
+            
+    return diffs
 
-# --- 2. CORE LOGIC ---
+def generate_detailed_report_text(resource_type, json1, json2):
+    """Generates the content for the Downloadable TXT file"""
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    lines = []
+    lines.append("========================================================")
+    lines.append(f" INFRA AUDIT REPORT - {resource_type}")
+    lines.append(f" Date: {now}")
+    lines.append("========================================================")
+    lines.append("")
+    
+    # Get specific differences
+    diffs = get_structural_diffs(json1, json2)
+    
+    if not diffs:
+        lines.append("✅ STATUS: SYNCED. No configuration drift detected.")
+    else:
+        lines.append(f"❌ STATUS: DRIFT DETECTED ({len(diffs)} issues found)")
+        lines.append("")
+        lines.append("--- DETAILED CHANGES ---")
+        for d in diffs:
+            lines.append(d)
+            lines.append("-" * 40)
+            
+    return "\n".join(lines)
 
+# --- 3. CORE LOGIC: VISUAL DIFF (HTML) ---
+def generate_visual_diff(json1, json2, name1="Source (Dev)", name2="Target (Stg/Local)"):
+    """
+    Generates a Side-by-Side HTML Diff with FORCED WHITE BACKGROUND
+    so it looks good even in Dark Mode.
+    """
+    text1 = json.dumps(json1, indent=2, sort_keys=True).splitlines()
+    text2 = json.dumps(json2, indent=2, sort_keys=True).splitlines()
+
+    differ = difflib.HtmlDiff(wrapcolumn=90)
+    html_table = differ.make_table(
+        text1, text2, 
+        fromdesc=name1, 
+        todesc=name2,
+        context=True, 
+        numlines=3
+    )
+    
+    # INJECT CSS TO FIX UGLY DARK MODE ISSUES
+    # We wrap the table in a white container and force black text.
+    styled_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ margin: 0; padding: 0; }}
+            .diff-container {{
+                background-color: #ffffff;
+                color: #000000;
+                padding: 20px;
+                border-radius: 8px;
+                border: 1px solid #ccc;
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 12px;
+                overflow-x: auto;
+            }}
+            table.diff {{ width: 100%; border-collapse: collapse; }}
+            table.diff th {{ background-color: #f0f0f0; color: #333; padding: 5px; border-bottom: 1px solid #ccc; }}
+            table.diff td {{ padding: 2px 5px; }}
+            /* Colors for Diff */
+            .diff_header {{ background-color: #e0e0e0; color: #555; }}
+            .diff_next {{ display: none; }}
+            .diff_add {{ background-color: #d4edda; color: #155724; }} /* Light Green */
+            .diff_chg {{ background-color: #fff3cd; color: #856404; }} /* Light Yellow */
+            .diff_sub {{ background-color: #f8d7da; color: #721c24; }} /* Light Red */
+        </style>
+    </head>
+    <body>
+        <div class="diff-container">
+            {html_table}
+        </div>
+    </body>
+    </html>
+    """
+    return styled_html
+
+# --- 4. CLEANERS ---
 def clean_api_gateway(api_json):
-    """Normalize API Gateway JSON for comparison"""
-    clean = json.loads(json.dumps(api_json)) # Deep copy
-    # Remove fields that are guaranteed to be different or irrelevant
+    clean = json.loads(json.dumps(api_json))
     if 'servers' in clean: del clean['servers']
     return clean
 
 def clean_ecs_definition(td_json):
-    """Normalize ECS Task Defs (Sorts Env Vars to prevent false flags)"""
     clean = json.loads(json.dumps(td_json))
-    
-    # Remove noise fields
     ignored = ['taskDefinitionArn', 'revision', 'status', 'registeredAt', 'registeredBy', 'compatibilities', 'requiresAttributes', 'tags']
     for field in ignored:
         if field in clean: del clean[field]
-
-    # Sort Lists (Environment Vars & Secrets)
     if 'containerDefinitions' in clean:
         for container in clean['containerDefinitions']:
+            # SORT ENV VARS so order doesn't matter
             if 'environment' in container:
-                # Sort by Name so order doesn't matter
                 container['environment'] = sorted(container['environment'], key=lambda x: x['name'])
             if 'secrets' in container:
                 container['secrets'] = sorted(container['secrets'], key=lambda x: x['name'])
     return clean
 
-def generate_visual_diff(json1, json2, name1="Source (Dev)", name2="Target (Stg/Local)"):
-    """Generates a Side-by-Side HTML Diff"""
-    text1 = json.dumps(json1, indent=2, sort_keys=True).splitlines()
-    text2 = json.dumps(json2, indent=2, sort_keys=True).splitlines()
-
-    differ = difflib.HtmlDiff(wrapcolumn=90)
-    html = differ.make_table(
-        text1, text2, 
-        fromdesc=name1, 
-        todesc=name2,
-        context=True, 
-        numlines=2
-    )
-    return html
-
-def generate_report(resource_type, differences_found):
-    """Generates a Markdown text report"""
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    md = f"# 🛡️ InfraAudit Report\n"
-    md += f"**Date:** {now}\n"
-    md += f"**Type:** {resource_type}\n"
-    md += f"**Status:** {'❌ Drift Detected' if differences_found else '✅ Synced'}\n\n"
-    if differences_found:
-        md += "## ⚠️ Differences Detected\n"
-        md += "Please check the attached visual diff for line-by-line comparison.\n"
-        md += "Check for:\n1. Typos in Integration URIs\n2. Mismatched Environment Variables\n3. Timeout settings\n"
-    else:
-        md += "## ✅ No Issues\nConfigurations are structurally identical.\n"
-    return md
-
-# --- 3. LIVE AWS CLIENT ---
+# --- 5. LIVE AWS CLIENT ---
 def get_aws_client(service, ak, sk, stoken, region):
-    return boto3.client(
-        service, region_name=region,
-        aws_access_key_id=ak, aws_secret_access_key=sk, aws_session_token=stoken,
-        verify=False # SSL Fix
-    )
+    return boto3.client(service, region_name=region, aws_access_key_id=ak, aws_secret_access_key=sk, aws_session_token=stoken, verify=False)
 
 def fetch_live_swagger(client, api_id, stage='dev'):
     try:
-        response = client.get_export(
-            restApiId=api_id, stageName=stage, exportType='oas30', parameters={'extensions': 'integrations'}
-        )
+        response = client.get_export(restApiId=api_id, stageName=stage, exportType='oas30', parameters={'extensions': 'integrations'})
         return json.loads(response['body'].read())
-    except Exception as e:
+    except Exception:
         return None
 
-# --- 4. UI LAYOUT ---
-
+# --- 6. UI ---
 st.title("🛡️ InfraAudit Pro")
-st.markdown("##### The Ultimate Configuration Drift Detector")
 
-# TABS
 tab_api, tab_ecs, tab_live = st.tabs(["📂 API Gateway (File)", "📦 ECS Task Def (File)", "☁️ Live AWS Sync"])
 
-# ==========================================
-# TAB 1: API GATEWAY (FILE UPLOAD)
-# ==========================================
+# TAB 1: API GATEWAY
 with tab_api:
-    st.info("Compare API Gateway configurations using exported JSON files (Bypass IAM permissions).")
-    
-    with st.expander("📝 How to Export JSON from AWS Console"):
-        st.markdown("""
-        1. Go to **API Gateway** > **Stages**.
-        2. Select your Stage (e.g., `dev`).
-        3. Click **Export** tab (or 'Stage Actions' > 'Export' in newer console).
-        4. Select **OpenAPI 3** + **JSON**.
-        5. **Check 'Export with API Gateway Extensions'**.
-        6. Download.
-        """)
-
+    st.info("Upload 'OpenAPI 3 + Extensions' JSON files.")
     c1, c2 = st.columns(2)
-    f1 = c1.file_uploader("Upload Dev/Source JSON", type=['json'], key="api1")
-    f2 = c2.file_uploader("Upload Local/Target JSON", type=['json'], key="api2")
+    f1 = c1.file_uploader("Dev JSON", type=['json'], key="api1")
+    f2 = c2.file_uploader("Local JSON", type=['json'], key="api2")
 
     if f1 and f2:
         j1 = clean_api_gateway(json.load(f1))
         j2 = clean_api_gateway(json.load(f2))
         
         if j1 == j2:
-            st.success("✅ Exact Match! No drift detected.")
+            st.success("✅ Synced")
         else:
             st.error("⚠️ Differences Found")
-            html_diff = generate_visual_diff(j1, j2)
-            components.html(html_diff, height=600, scrolling=True)
+            # Render Visual Diff
+            html_view = generate_visual_diff(j1, j2)
+            components.html(html_view, height=600, scrolling=True)
             
-            # Download
-            rpt = generate_report("API Gateway", True)
-            st.download_button("📥 Download Report", rpt, "api_audit.md")
+            # Generate Text Report
+            report_txt = generate_detailed_report_text("API Gateway", j1, j2)
+            st.download_button("📥 Download Detailed Report", report_txt, "api_audit.txt")
 
-# ==========================================
-# TAB 2: ECS TASK DEFINITION (FILE UPLOAD)
-# ==========================================
+# TAB 2: ECS
 with tab_ecs:
-    st.info("Compare ECS Task Definitions. Automatically sorts environment variables for accuracy.")
-    
-    with st.expander("📝 How to Export JSON from ECS"):
-        st.markdown("""
-        1. Go to **ECS** > **Task Definitions**.
-        2. Click the Definition Family.
-        3. Click the Revision number.
-        4. Click the **JSON** tab.
-        5. Copy/Download.
-        """)
-
+    st.info("Upload ECS Task Definition JSONs.")
     c1, c2 = st.columns(2)
-    e1 = c1.file_uploader("Upload Dev Task Def", type=['json'], key="ecs1")
-    e2 = c2.file_uploader("Upload Stg/Prod Task Def", type=['json'], key="ecs2")
+    e1 = c1.file_uploader("Dev Task Def", type=['json'], key="ecs1")
+    e2 = c2.file_uploader("Stg Task Def", type=['json'], key="ecs2")
 
     if e1 and e2:
-        # CLEAN & SORT
         j1 = clean_ecs_definition(json.load(e1))
         j2 = clean_ecs_definition(json.load(e2))
         
-        # IMAGE CHECK
-        imgs1 = [c['image'] for c in j1.get('containerDefinitions', [])]
-        imgs2 = [c['image'] for c in j2.get('containerDefinitions', [])]
-        
-        if imgs1 != imgs2:
-            st.warning(f"🚨 Image Version Mismatch: {imgs1} vs {imgs2}")
-
         if j1 == j2:
-            st.success("✅ Exact Match! configuration is identical.")
+            st.success("✅ Synced")
         else:
-            st.error(f"⚠️ Configuration Drift Detected")
-            html_diff = generate_visual_diff(j1, j2, "Dev ECS", "Stg ECS")
-            components.html(html_diff, height=600, scrolling=True)
+            st.error("⚠️ Differences Found")
+            html_view = generate_visual_diff(j1, j2, "Dev ECS", "Stg ECS")
+            components.html(html_view, height=600, scrolling=True)
             
-            rpt = generate_report("ECS Task Definition", True)
-            st.download_button("📥 Download Report", rpt, "ecs_audit.md")
+            report_txt = generate_detailed_report_text("ECS Task Definition", j1, j2)
+            st.download_button("📥 Download Detailed Report", report_txt, "ecs_audit.txt")
 
-# ==========================================
-# TAB 3: LIVE AWS CONNECT
-# ==========================================
+# TAB 3: LIVE
 with tab_live:
-    st.warning("⚠️ Requires AWS Credentials. Uses SSL verify=False for proxy compatibility.")
-    
-    # SIDEBAR AUTH (Only visible when needed, but placed here for logic flow)
     with st.sidebar:
-        st.header("🔐 AWS Credentials")
+        st.header("🔐 Credentials")
         with st.form("auth"):
-            ak = st.text_input("Access Key ID", type="password")
-            sk = st.text_input("Secret Access Key", type="password")
+            ak = st.text_input("Access Key", type="password")
+            sk = st.text_input("Secret Key", type="password")
             stok = st.text_input("Session Token", type="password")
             reg = st.text_input("Region", value="us-east-1")
-            submit_auth = st.form_submit_button("Save Credentials")
-        
-        if submit_auth:
-            st.session_state['creds'] = {'ak': ak, 'sk': sk, 'stok': stok, 'reg': reg}
-            st.success("Credentials Temporarily Saved")
+            submit = st.form_submit_button("Save")
+        if submit: st.session_state['creds'] = {'ak': ak, 'sk': sk, 'stok': stok, 'reg': reg}
 
-    # MAIN LIVE UI
-    if 'creds' not in st.session_state:
-        st.info("👈 Please enter your credentials in the Sidebar first.")
-    else:
+    if 'creds' in st.session_state:
         c1, c2 = st.columns(2)
-        dev_id = c1.text_input("Source API ID", value="am78gt7609")
-        loc_id = c2.text_input("Target API ID")
-        
-        if st.button("🔴 Scan Live APIs"):
-            with st.spinner("Connecting to AWS..."):
-                creds = st.session_state['creds']
-                client = get_aws_client('apigateway', creds['ak'], creds['sk'], creds['stok'], creds['reg'])
-                
-                d_json = fetch_live_swagger(client, dev_id)
-                l_json = fetch_live_swagger(client, loc_id)
-                
-                if d_json and l_json:
-                    clean_d = clean_api_gateway(d_json)
-                    clean_l = clean_api_gateway(l_json)
-                    
-                    if clean_d == clean_l:
-                         st.balloons()
-                         st.success("✅ Live APIs are Synced!")
-                    else:
-                        st.error("⚠️ Live Drift Detected")
-                        html_diff = generate_visual_diff(clean_d, clean_l)
-                        components.html(html_diff, height=600, scrolling=True)
+        dev_id = c1.text_input("Source ID", value="am78gt7609")
+        loc_id = c2.text_input("Target ID")
+        if st.button("Scan"):
+            creds = st.session_state['creds']
+            client = get_aws_client('apigateway', creds['ak'], creds['sk'], creds['stok'], creds['reg'])
+            d = fetch_live_swagger(client, dev_id)
+            l = fetch_live_swagger(client, loc_id)
+            if d and l:
+                cd = clean_api_gateway(d)
+                cl = clean_api_gateway(l)
+                if cd == cl: st.success("✅ Synced")
                 else:
-                    st.error("Failed to fetch APIs. Check IDs and Permissions.")
+                    st.error("⚠️ Drift Detected")
+                    html_view = generate_visual_diff(cd, cl)
+                    components.html(html_view, height=600, scrolling=True)
+                    report_txt = generate_detailed_report_text("Live API Gateway", cd, cl)
+                    st.download_button("📥 Download Report", report_txt, "live_audit.txt")
+            else:
+                st.error("Fetch Failed")
+    else:
+        st.info("Provide credentials in sidebar")
