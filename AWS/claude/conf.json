@@ -1,0 +1,15 @@
+{
+  "environment": "production",
+  "s3_file_downloads": [
+    {
+      "bucket": "my-app-config-bucket",
+      "prefix": "configs/",
+      "description": "App Configuration Files"
+    },
+    {
+      "bucket": "my-env-vars-bucket",
+      "prefix": "secrets/prod/",
+      "description": "Environment Variables"
+    }
+  ]
+}
