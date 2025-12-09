@@ -1,0 +1,1 @@
+grep -rnw --include=\*.{xml,java,sql} . -e "SCHEMA_NAME.TABLE_NAME"
