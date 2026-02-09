@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCA Agent: Deep Dive Approach</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #546e7a;
+            margin-top: 20px;
+        }
+        .example-box {
+            background: #ecf0f1;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .scenario {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .log-entry {
+            font-family: 'Courier New', monospace;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        .knowledge-base {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .diagram {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .service-box {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .error-box {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .flow-arrow {
+            display: inline-block;
+            margin: 0 10px;
+            font-size: 24px;
+            color: #7f8c8d;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 3px solid #3498db;
+            padding: 10px 15px;
+            margin: 10px 0;
+        }
+        .step-number {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .hypothesis {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .evidence {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 10px;
+            margin: 10px 0 10px 20px;
+            border-radius: 4px;
+        }
+        .verdict {
+            background: #c8e6c9;
+            border: 2px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .mermaid {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 RCA Agent: Complete Approach & Architecture</h1>
+        <p style="font-size: 18px; color: #555;">
+            A deep dive into how an intelligent RCA agent works with 10+ microservices using structured context and reasoning.
+        </p>
+    </div>
+
+    <div class="container">
+        <h2>📐 System Overview: Your Content Platform</h2>
+        
+        <p>Let's establish your 10-service architecture:</p>
+
+        <div class="mermaid">
+graph TB
+    subgraph "Ingestion Layer"
+        API[API Gateway]
+        DBInterface[DB Interface Lambda]
+        Validator[Content Validator]
+    end
+    
+    subgraph "Message Queue"
+        SQS[SQS Queue]
+    end
+    
+    subgraph "Processing Layer"
+        Cron[Content Processor Cron]
+        ImageProc[Image Processing Service]
+        VideoProc[Video Transcoding Service]
+        MetadataEnrich[Metadata Enrichment]
+    end
+    
+    subgraph "Data Layer"
+        DynamoDB[(DynamoDB<br/>Raw Data)]
+        NormDB[(Normalized DB<br/>PostgreSQL)]
+    end
+    
+    subgraph "Management Layer"
+        Admin[Admin Portal API]
+        AssetService[Asset Service]
+        UserMgmt[User Management]
+    end
+    
+    subgraph "Background Jobs"
+        StatusSync[Status Sync Batch]
+        Analytics[Analytics Aggregator]
+    end
+    
+    API --> DBInterface
+    DBInterface --> Validator
+    Validator --> DynamoDB
+    Validator --> SQS
+    SQS --> Cron
+    Cron --> ImageProc
+    Cron --> VideoProc
+    Cron --> MetadataEnrich
+    Cron --> NormDB
+    ImageProc --> NormDB
+    Admin --> AssetService
+    AssetService --> NormDB
+    StatusSync --> NormDB
+    Analytics --> NormDB
+    
+    style API fill:#3498db,stroke:#2980b9,color:#fff
+    style DBInterface fill:#3498db,stroke:#2980b9,color:#fff
+    style Validator fill:#3498db,stroke:#2980b9,color:#fff
+    style Cron fill:#9b59b6,stroke:#8e44ad,color:#fff
+    style Admin fill:#27ae60,stroke:#229954,color:#fff
+    style AssetService fill:#27ae60,stroke:#229954,color:#fff
+    style SQS fill:#f39c12,stroke:#e67e22,color:#fff
+        </div>
+
+        <p><strong>10 Services in play:</strong></p>
+        <ol>
+            <li><strong>API Gateway</strong> - Entry point for all external requests</li>
+            <li><strong>DB Interface Lambda</strong> - Handles content ingestion logic</li>
+            <li><strong>Content Validator</strong> - Validates incoming content structure</li>
+            <li><strong>Content Processor Cron</strong> - Processes queued content</li>
+            <li><strong>Image Processing Service</strong> - External service for image optimization</li>
+            <li><strong>Video Transcoding Service</strong> - Handles video processing</li>
+            <li><strong>Metadata Enrichment</strong> - Enriches content metadata</li>
+            <li><strong>Admin Portal API</strong> - Backend for admin interface</li>
+            <li><strong>Asset Service</strong> - CRUD operations for assets</li>
+            <li><strong>Status Sync Batch</strong> - Background job for status updates</li>
+        </ol>
+    </div>
+
+    <div class="container">
+        <h2>📚 The Knowledge Base: Agent's Foundation</h2>
+        
+        <p>The knowledge base is the agent's "understanding" of your system. It has three core components:</p>
+
+        <h3>1. Service Dependency Graph</h3>
+        
+        <div class="knowledge-base">
+            <h4>Example: DB Interface Service Definition</h4>
+            <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto;">
+services:
+  db_interface:
+    id: "db-interface"
+    type: "lambda"
+    language: "java"
+    log_group: "/aws/lambda/db-interface"
+    
+    responsibilities:
+      - "Receive content ingestion requests"
+      - "Validate basic schema compliance"
+      - "Generate unique asset_id"
+      - "Store raw payload in DynamoDB"
+      - "Publish to SQS for async processing"
+    
+    upstream_dependencies: 
+      - api_gateway
+    
+    downstream_dependencies:
+      - content_validator
+      - dynamodb
+      - sqs_queue
+    
+    expected_behaviors:
+      - name: "Generate TraceID"
+        description: "Every request must generate a unique traceID"
+        validation: "Log must contain 'Generated traceID: xxx'"
+        
+      - name: "DynamoDB Write Success"
+        description: "Raw content must be persisted before SQS publish"
+        validation: "Log contains 'DynamoDB write successful for asset_id: xxx'"
+        
+      - name: "SQS Publish"
+        description: "Asset ID must be published to SQS"
+        validation: "Log contains 'Published to SQS: {asset_id: xxx, traceID: xxx}'"
+    
+    common_errors:
+      - error_code: "VALIDATION_FAILED"
+        description: "Input schema validation failure"
+        typical_causes:
+          - "Missing required fields"
+          - "Invalid data types"
+          - "Field length violations"
+        
+      - error_code: "DYNAMODB_WRITE_ERROR"
+        description: "Failed to write to DynamoDB"
+        typical_causes:
+          - "Throttling due to high write rate"
+          - "Table capacity exceeded"
+          - "Network timeout to DynamoDB"
+        
+      - error_code: "SQS_PUBLISH_FAILED"
+        description: "Failed to publish message to SQS"
+        typical_causes:
+          - "SQS queue not available"
+          - "Message size exceeds limit"
+          - "IAM permission issues"
+    
+    sla:
+      response_time_p95: "500ms"
+      success_rate: "99.5%"
+      timeout: "30s"
+            </pre>
+        </div>
+
+        <h3>2. Data Flow Definitions</h3>
+        
+        <div class="knowledge-base">
+            <h4>Example: Content Ingestion Flow</h4>
+            <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto;">
+flows:
+  content_ingestion:
+    name: "Content Ingestion Flow"
+    trigger: "API request to /api/content/ingest"
+    
+    steps:
+      - step: 1
+        service: "api_gateway"
+        action: "Route request to DB Interface"
+        expected_log: "Routing POST /api/content/ingest to db-interface"
+        
+      - step: 2
+        service: "db_interface"
+        action: "Generate traceID and asset_id"
+        expected_log: "Generated traceID: {traceID}, asset_id: {asset_id}"
+        critical: true
+        
+      - step: 3
+        service: "db_interface"
+        action: "Call Content Validator"
+        expected_log: "Validating content for asset_id: {asset_id}"
+        timeout: "5s"
+        
+      - step: 4
+        service: "content_validator"
+        action: "Validate schema and business rules"
+        expected_log: "Validation successful for asset_id: {asset_id}"
+        failure_modes:
+          - "MISSING_REQUIRED_FIELD"
+          - "INVALID_CONTENT_TYPE"
+          - "EXTERNAL_ID_FORMAT_ERROR"
+        
+      - step: 5
+        service: "db_interface"
+        action: "Write to DynamoDB"
+        expected_log: "DynamoDB write successful"
+        timeout: "3s"
+        retry_policy:
+          max_retries: 3
+          backoff: "exponential"
+        
+      - step: 6
+        service: "db_interface"
+        action: "Publish to SQS"
+        expected_log: "Published to SQS: {asset_id: xxx, traceID: xxx}"
+        critical: true
+        
+      - step: 7
+        service: "db_interface"
+        action: "Return success response"
+        expected_log: "Ingestion completed for asset_id: {asset_id}"
+    
+    expected_duration: "2-5 seconds"
+    sla: "95% complete within 5 seconds"
+    
+    critical_path:
+      - "Generate traceID (step 2)"
+      - "Publish to SQS (step 6)"
+      
+    state_transitions:
+      initial_state: "N/A"
+      success_state: "QUEUED"
+      failure_states: ["VALIDATION_FAILED", "INGESTION_FAILED"]
+            </pre>
+        </div>
+
+        <h3>3. Error Pattern Library</h3>
+        
+        <div class="knowledge-base">
+            <h4>Example: Known Error Patterns</h4>
+            <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto;">
+error_patterns:
+  duplicate_content_ingestion:
+    name: "Duplicate Content Ingestion"
+    
+    symptoms:
+      - service: "asset_service"
+        error_message_pattern: "Duplicate key.*external_id"
+        
+      - service: "content_processor"
+        error_message_pattern: "Asset .* already exists in normalized tables"
+    
+    root_causes:
+      - cause: "User double-click on submit"
+        likelihood: "HIGH"
+        investigation:
+          - "Check DB Interface logs for duplicate requests within 2 seconds"
+          - "Look for same external_id in multiple requests"
+          - "Verify if frontend has debouncing"
+        
+      - cause: "Retry logic without idempotency check"
+        likelihood: "MEDIUM"
+        investigation:
+          - "Check for retry attempts in logs"
+          - "Look for same traceID with multiple attempts"
+          
+      - cause: "Concurrent SQS message processing"
+        likelihood: "LOW"
+        investigation:
+          - "Check if multiple cron instances processed same message"
+          - "Verify SQS visibility timeout settings"
+    
+    resolution_steps:
+      - "Identify duplicate entries in DynamoDB"
+      - "Check which entry was processed first"
+      - "Remove duplicate from normalized tables"
+      - "Implement idempotency check in DB Interface"
+    
+    prevention:
+      - "Add external_id uniqueness check before DynamoDB write"
+      - "Implement frontend debouncing (300ms)"
+      - "Use conditional writes in DynamoDB"
+            </pre>
+        </div>
+
+        <h3>4. Code Access via RAG (Retrieval-Augmented Generation)</h3>
+        
+        <p>Beyond logs and knowledge graphs, the agent needs access to actual code to understand implementation details, configurations, and business logic. This is achieved through a RAG pipeline.</p>
+
+        <div class="knowledge-base">
+            <h4>Why Code Access is Critical</h4>
+            <p>The agent uses code access to:</p>
+            <ul>
+                <li><strong>Verify validation logic:</strong> What rules actually exist in the code vs what should exist?</li>
+                <li><strong>Check configurations:</strong> Timeout values, retry policies, rate limits</li>
+                <li><strong>Understand error codes:</strong> What does a specific error code mean?</li>
+                <li><strong>Identify bugs:</strong> Find TODO comments, incomplete logic, or missing checks</li>
+                <li><strong>Trace data transformations:</strong> How is data modified as it flows through services?</li>
+            </ul>
+        </div>
+
+        <div class="knowledge-base">
+            <h4>How Code RAG Works</h4>
+            <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto;">
+<strong>Indexing Phase (One-time setup):</strong>
+1. Parse codebase → Extract functions, classes, configs
+2. Generate embeddings for each code block
+3. Store in vector database with metadata:
+   - service_name: "db_interface"
+   - file_path: "src/main/java/DBInterfaceService.java"
+   - function_name: "validateContent"
+   - code_snippet: "public void validateContent(...) { ... }"
+   - description: "Validates content payload before ingestion"
+
+<strong>Query Phase (During RCA):</strong>
+Agent asks: "How does DB Interface validate external_id uniqueness?"
+   ↓
+Convert question to embedding
+   ↓
+Search vector DB for semantically similar code
+   ↓
+Return top 3 relevant code snippets
+   ↓
+Agent reads and understands the implementation
+            </pre>
+        </div>
+
+        <div class="knowledge-base">
+            <h4>What Gets Indexed (Priority Order)</h4>
+            <table style="margin: 15px 0;">
+                <tr>
+                    <th>Priority</th>
+                    <th>Code Type</th>
+                    <th>Why It Matters</th>
+                </tr>
+                <tr>
+                    <td><strong>HIGH</strong></td>
+                    <td>
+                        • Validation logic<br>
+                        • Error handling<br>
+                        • Configuration files<br>
+                        • Constants & enums
+                    </td>
+                    <td>
+                        Most errors stem from validation failures or misconfigurations. Understanding error codes is critical for RCA.
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>MEDIUM</strong></td>
+                    <td>
+                        • Business logic<br>
+                        • Data transformations<br>
+                        • External service calls<br>
+                        • State machines
+                    </td>
+                    <td>
+                        Needed to understand expected behavior and trace data flow through the system.
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>LOW</strong></td>
+                    <td>
+                        • Utility functions<br>
+                        • UI code<br>
+                        • Test files
+                    </td>
+                    <td>
+                        Less relevant for backend RCA, but tests can document expected behavior.
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="example-box">
+            <h4>Example: Code RAG in Action</h4>
+            <p><strong>Investigation Context:</strong> Agent found duplicate ingestions but needs to understand WHY validation didn't catch it.</p>
+            
+            <p><strong>Agent Query to Code RAG:</strong><br>
+            "Show me the validation logic for external_id in DB Interface"</p>
+            
+            <div class="log-entry" style="margin-top: 10px;">
+<strong>RAG Response (Top Result):</strong>
+
+File: src/main/java/com/platform/dbinterface/DBInterfaceService.java
+Function: validateContent(ContentRequest request)
+Confidence: 0.94
+
+Code:
+public void validateContent(ContentRequest request) {
+    // Check required fields
+    if (request.getExternalId() == null || request.getExternalId().isEmpty()) {
+        throw new ValidationException("external_id is required");
+    }
+    
+    if (request.getTitle() == null || request.getTitle().isEmpty()) {
+        throw new ValidationException("title is required");
+    }
+    
+    // TODO: Add uniqueness check against DynamoDB
+    // Currently only validates presence, not uniqueness!
+    
+    log.info("Validation passed for external_id: {}", request.getExternalId());
+}
+
+<strong>Agent's Understanding:</strong>
+"The validation code confirms the gap - it only checks if external_id 
+is present, but does NOT verify uniqueness against existing records. 
+The TODO comment explicitly acknowledges this missing check. This 
+explains why duplicate submissions both passed validation."
+            </div>
+            
+            <p style="margin-top: 15px;"><strong>Without Code Access:</strong> Agent could only guess about validation logic<br>
+            <strong>With Code Access:</strong> Agent has definitive proof of the root cause</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>💾 Knowledge Base Storage Options</h2>
+        
+        <p>The knowledge base can be stored in different ways depending on your scale and complexity needs. Here are the main approaches:</p>
+
+        <h3>Option 1: File-Based Storage (Recommended for MVP)</h3>
+        
+        <div class="knowledge-base">
+            <h4>Structure</h4>
+            <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto;">
+knowledge-base/
+├── services/
+│   ├── db-interface.yaml
+│   ├── content-processor.yaml
+│   ├── asset-service.yaml
+│   └── ... (one file per service)
+├── flows/
+│   ├── content-ingestion.yaml
+│   ├── asset-update.yaml
+│   └── ... (one file per major flow)
+├── error-patterns/
+│   ├── duplicate-key.yaml
+│   ├── timeout.yaml
+│   └── ... (one file per pattern)
+└── topology.yaml  # Overall system architecture
+            </pre>
+        </div>
+
+        <div class="knowledge-base">
+            <h4>How It Works</h4>
+            <p><strong>Initialization:</strong></p>
+            <ol>
+                <li>Agent loads all YAML files on startup</li>
+                <li>Parses into structured in-memory objects</li>
+                <li>Builds graph structure using lightweight library (e.g., NetworkX)</li>
+            </ol>
+            
+            <p><strong>Querying:</strong></p>
+            <div class="log-entry" style="margin-top: 10px;">
+# Query: What services does DB Interface depend on?
+downstream = knowledge_graph.get_dependencies("db_interface")
+# Returns: ["dynamodb", "sqs_queue", "content_validator"]
+
+# Query: What's the expected flow for content ingestion?
+flow = knowledge_graph.get_flow("content_ingestion")
+# Returns: [Step1, Step2, Step3, ...]
+
+# Query: Find all services 2 hops from API Gateway
+affected = knowledge_graph.find_descendants("api_gateway", depth=2)
+# Returns: ["db_interface", "sqs", "content_processor", ...]
+            </div>
+        </div>
+
+        <table>
+            <tr>
+                <th style="width: 100px;">Aspect</th>
+                <th>Pros</th>
+                <th>Cons</th>
+            </tr>
+            <tr>
+                <td><strong>Setup</strong></td>
+                <td>
+                    ✓ No database needed<br>
+                    ✓ Version controlled (Git)<br>
+                    ✓ Human-readable YAML<br>
+                    ✓ Easy to edit and review
+                </td>
+                <td>
+                    ✗ Manual relationship definitions<br>
+                    ✗ No automatic discovery
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Performance</strong></td>
+                <td>
+                    ✓ Fast (in-memory lookups)<br>
+                    ✓ Microsecond query times<br>
+                    ✓ No network overhead
+                </td>
+                <td>
+                    ✗ All data must fit in memory<br>
+                    ✗ Startup time increases with size
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Scalability</strong></td>
+                <td>
+                    ✓ Works great for 10-50 services
+                </td>
+                <td>
+                    ✗ Struggles beyond 100+ services<br>
+                    ✗ Complex queries need manual coding
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Maintenance</strong></td>
+                <td>
+                    ✓ Changes tracked in Git<br>
+                    ✓ Code review for updates<br>
+                    ✓ Can deploy with application
+                </td>
+                <td>
+                    ✗ Manual updates required<br>
+                    ✗ Can drift from reality
+                </td>
+            </tr>
+        </table>
+
+        <p><strong>Best for:</strong> MVP and initial implementation, teams with 10-30 services, when simplicity is valued</p>
+
+        <h3>Option 2: Graph Database (Neo4j, Amazon Neptune)</h3>
+        
+        <div class="knowledge-base">
+            <h4>Structure</h4>
+            <p>Data is stored as nodes (services, databases, queues) and edges (relationships):</p>
+            <div class="mermaid">
+graph LR
+    DBI[DB Interface]
+    DDB[(DynamoDB)]
+    SQS[SQS Queue]
+    CP[Content Processor]
+    IMG[Image Service]
+    NDB[(Normalized DB)]
+    
+    DBI -->|WRITES_TO| DDB
+    DBI -->|PUBLISHES_TO| SQS
+    SQS -->|CONSUMED_BY| CP
+    CP -->|CALLS| IMG
+    CP -->|WRITES_TO| NDB
+    
+    style DBI fill:#3498db,stroke:#2980b9,color:#fff
+    style CP fill:#9b59b6,stroke:#8e44ad,color:#fff
+            </div>
+        </div>
+
+        <div class="knowledge-base">
+            <h4>How It Works</h4>
+            <p><strong>Querying with Cypher (Neo4j):</strong></p>
+            <div class="log-entry" style="margin-top: 10px;">
+// Find all services affected if DynamoDB goes down
+MATCH (db:DataStore {name: "DynamoDB"})<-[:WRITES_TO|READS_FROM]-(svc:Service)
+RETURN svc.name
+
+// Find path from API Gateway to error location
+MATCH path = (api:Service {name: "API Gateway"})-[*]->(target:Service {name: "Asset Service"})
+RETURN path
+
+// Find services with most dependencies (bottlenecks)
+MATCH (s:Service)-[r]->()
+RETURN s.name, count(r) as deps
+ORDER BY deps DESC
+            </div>
+        </div>
+
+        <table>
+            <tr>
+                <th style="width: 100px;">Aspect</th>
+                <th>Pros</th>
+                <th>Cons</th>
+            </tr>
+            <tr>
+                <td><strong>Setup</strong></td>
+                <td>
+                    ✓ Powerful query language<br>
+                    ✓ Visual exploration tools<br>
+                    ✓ Can auto-discover relationships
+                </td>
+                <td>
+                    ✗ Requires database infrastructure<br>
+                    ✗ Learning curve for Cypher<br>
+                    ✗ Additional operational overhead
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Performance</strong></td>
+                <td>
+                    ✓ Optimized for graph traversal<br>
+                    ✓ Handles complex queries efficiently<br>
+                    ✓ Sub-second query times
+                </td>
+                <td>
+                    ✗ Network latency<br>
+                    ✗ Needs proper indexing
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Scalability</strong></td>
+                <td>
+                    ✓ Handles thousands of services<br>
+                    ✓ Complex multi-hop queries<br>
+                    ✓ Relationship analysis at scale
+                </td>
+                <td>
+                    ✗ Overkill for small systems<br>
+                    ✗ Cost of running database
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Maintenance</strong></td>
+                <td>
+                    ✓ Dynamic updates<br>
+                    ✓ No application restart needed<br>
+                    ✓ Can integrate with service discovery
+                </td>
+                <td>
+                    ✗ Requires database maintenance<br>
+                    ✗ Backup and recovery needed<br>
+                    ✗ Not version controlled like code
+                </td>
+            </tr>
+        </table>
+
+        <p><strong>Best for:</strong> Large systems (50+ services), complex dependency analysis, when budget allows for infrastructure</p>
+
+        <h3>Option 3: Hybrid Approach (Recommended for Production)</h3>
+
+        <div class="example-box">
+            <h4>Best of Both Worlds</h4>
+            <ol>
+                <li><strong>Store in YAML files</strong> (version controlled, easy to edit)</li>
+                <li><strong>Load into in-memory graph</strong> on startup (using NetworkX or similar)</li>
+                <li><strong>Use graph library for queries</strong> (fast, no database needed)</li>
+            </ol>
+            
+            <p><strong>Example Implementation:</strong></p>
+            <div class="log-entry" style="margin-top: 10px;">
+import networkx as nx
+
+# Build graph from YAML files
+G = nx.DiGraph()
+G.add_edge("DB Interface", "DynamoDB", relation="WRITES_TO")
+G.add_edge("DB Interface", "SQS", relation="PUBLISHES_TO")
+G.add_edge("SQS", "Content Processor", relation="CONSUMED_BY")
+
+# Query: Find all downstream services
+downstream = nx.descendants(G, "DB Interface")
+# Returns: {DynamoDB, SQS, Content Processor, Image Service, ...}
+
+# Query: Find shortest path
+path = nx.shortest_path(G, "API Gateway", "Asset Service")
+# Returns: ["API Gateway", "DB Interface", "SQS", "Content Processor", "Asset Service"]
+
+# Query: Services affected if SQS fails
+affected = nx.descendants(G, "SQS")
+# Returns: {Content Processor, Image Service, Normalized DB, ...}
+            </div>
+            
+            <p style="margin-top: 15px;"><strong>Why this works best:</strong></p>
+            <ul>
+                <li>✓ Simple files that anyone can edit</li>
+                <li>✓ Fast in-memory graph queries</li>
+                <li>✓ No database infrastructure</li>
+                <li>✓ Version controlled</li>
+                <li>✓ Scales to 100+ services</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🎬 Real Scenario: Step-by-Step RCA</h2>
+        
+        <div class="scenario">
+            <h3>⚠️ Incident Report</h3>
+            <p><strong>Time:</strong> 2026-02-03 14:23:45 UTC</p>
+            <p><strong>Alert:</strong> Error in Asset Service</p>
+            <p><strong>Error Message:</strong> "Failed to update asset ASSET_789: Duplicate key constraint violation on column 'external_id', value='EXT_456'"</p>
+            <p><strong>Asset ID:</strong> ASSET_789</p>
+            <p><strong>TraceID:</strong> Unknown (error occurred in batch processing)</p>
+        </div>
+
+        <h3>Agent's Investigation Process</h3>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Error Classification</strong>
+            <p>Agent analyzes the error message and classifies it:</p>
+            <ul>
+                <li><strong>Error Type:</strong> Database Constraint Violation</li>
+                <li><strong>Constraint Type:</strong> Unique Key Constraint</li>
+                <li><strong>Service:</strong> Asset Service</li>
+                <li><strong>Column:</strong> external_id</li>
+                <li><strong>Value:</strong> EXT_456</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Query Knowledge Base</strong>
+            <p>Agent asks: "What do I know about Asset Service and duplicate key errors?"</p>
+            <div class="knowledge-base" style="margin-top: 10px;">
+                <strong>Knowledge Retrieved:</strong>
+                <ul>
+                    <li>Asset Service writes to normalized tables after content processing</li>
+                    <li>external_id comes from the original ingestion payload</li>
+                    <li>Duplicate key errors typically indicate duplicate ingestion</li>
+                    <li>Upstream services: DB Interface → SQS → Content Processor → Asset Service</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Trace Reconstruction Strategy</strong>
+            <p>Since no traceID was provided, agent uses asset_id as correlation key:</p>
+            <div class="log-entry">
+Query: Find all logs mentioning "ASSET_789" across all services
+Time range: Last 24 hours
+Services to search: 
+  - db_interface
+  - content_validator  
+  - content_processor
+  - image_processing
+  - asset_service
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Log Collection & Timeline Building</strong>
+            <p>Agent queries logs and builds chronological timeline:</p>
+        </div>
+
+        <div class="log-entry">
+// DB Interface - First Ingestion
+{
+  "timestamp": "2026-02-03T14:15:00.123Z",
+  "service": "db_interface",
+  "level": "INFO",
+  "traceID": "trace-abc-123",
+  "message": "Generated asset_id: ASSET_789 for external_id: EXT_456",
+  "user_id": "user_john"
+}
+
+{
+  "timestamp": "2026-02-03T14:15:00.456Z",
+  "service": "db_interface", 
+  "level": "INFO",
+  "traceID": "trace-abc-123",
+  "message": "DynamoDB write successful for asset_id: ASSET_789"
+}
+
+{
+  "timestamp": "2026-02-03T14:15:00.789Z",
+  "service": "db_interface",
+  "level": "INFO", 
+  "traceID": "trace-abc-123",
+  "message": "Published to SQS: {asset_id: ASSET_789, traceID: trace-abc-123}"
+}
+
+// DB Interface - SECOND Ingestion (2 seconds later!)
+{
+  "timestamp": "2026-02-03T14:15:02.234Z",
+  "service": "db_interface",
+  "level": "INFO",
+  "traceID": "trace-def-456",  // <-- DIFFERENT TRACE ID!
+  "message": "Generated asset_id: ASSET_790 for external_id: EXT_456",  // <-- SAME EXTERNAL_ID!
+  "user_id": "user_john"  // <-- SAME USER!
+}
+
+{
+  "timestamp": "2026-02-03T14:15:02.567Z",
+  "service": "db_interface",
+  "level": "INFO",
+  "traceID": "trace-def-456",
+  "message": "DynamoDB write successful for asset_id: ASSET_790"
+}
+
+{
+  "timestamp": "2026-02-03T14:15:02.890Z",
+  "service": "db_interface",
+  "level": "INFO",
+  "traceID": "trace-def-456",
+  "message": "Published to SQS: {asset_id: ASSET_790, traceID: trace-def-456}"
+}
+
+// Content Processor - Processing First Asset
+{
+  "timestamp": "2026-02-03T14:16:30.123Z",
+  "service": "content_processor",
+  "level": "INFO",
+  "traceID": "trace-abc-123",
+  "asset_id": "ASSET_789",
+  "message": "Picked from SQS, starting processing"
+}
+
+{
+  "timestamp": "2026-02-03T14:17:15.456Z",
+  "service": "content_processor",
+  "level": "INFO",
+  "traceID": "trace-abc-123",
+  "asset_id": "ASSET_789",
+  "message": "Image processing completed"
+}
+
+{
+  "timestamp": "2026-02-03T14:17:45.789Z",
+  "service": "content_processor",
+  "level": "INFO",
+  "traceID": "trace-abc-123",
+  "asset_id": "ASSET_789",
+  "message": "Writing to normalized tables with external_id: EXT_456"
+}
+
+{
+  "timestamp": "2026-02-03T14:17:46.012Z",
+  "service": "content_processor",
+  "level": "INFO",
+  "traceID": "trace-abc-123",
+  "asset_id": "ASSET_789",
+  "message": "Successfully written to normalized tables"
+}
+
+// Content Processor - Processing Second Asset  
+{
+  "timestamp": "2026-02-03T14:18:00.234Z",
+  "service": "content_processor",
+  "level": "INFO",
+  "traceID": "trace-def-456",
+  "asset_id": "ASSET_790",
+  "message": "Picked from SQS, starting processing"
+}
+
+{
+  "timestamp": "2026-02-03T14:18:45.567Z",
+  "service": "content_processor",
+  "level": "INFO",
+  "traceID": "trace-def-456",
+  "asset_id": "ASSET_790",
+  "message": "Image processing completed"
+}
+
+{
+  "timestamp": "2026-02-03T14:19:15.890Z",
+  "service": "content_processor",
+  "level": "INFO",
+  "traceID": "trace-def-456",
+  "asset_id": "ASSET_790",
+  "message": "Writing to normalized tables with external_id: EXT_456"
+}
+
+// THE ERROR!
+{
+  "timestamp": "2026-02-03T14:19:16.123Z",
+  "service": "content_processor",
+  "level": "ERROR",
+  "traceID": "trace-def-456",
+  "asset_id": "ASSET_790",
+  "message": "Failed to write to normalized tables: ERROR: duplicate key value violates unique constraint 'assets_external_id_key'",
+  "error_details": {
+    "constraint": "assets_external_id_key",
+    "column": "external_id",
+    "value": "EXT_456"
+  }
+}
+        </div>
+
+        <div class="step">
+            <span class="step-number">5</span>
+            <strong>Pattern Matching</strong>
+            <p>Agent checks the error pattern library and finds a match:</p>
+            <div class="knowledge-base" style="margin-top: 10px;">
+                <strong>Matched Pattern:</strong> "Duplicate Content Ingestion"
+                <p>Confidence: 95%</p>
+                <p><strong>Reasoning:</strong></p>
+                <ul>
+                    <li>Two different asset_ids (ASSET_789, ASSET_790)</li>
+                    <li>Same external_id (EXT_456)</li>
+                    <li>Same user (user_john)</li>
+                    <li>Requests within 2 seconds of each other</li>
+                    <li>Pattern matches "User double-click on submit"</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">6</span>
+            <strong>Hypothesis Generation</strong>
+            <p>Based on pattern match and knowledge base, agent generates hypotheses:</p>
+        </div>
+
+        <div class="hypothesis">
+            <h4>Hypothesis 1: User Double-Click Submission (PRIMARY - 85% confidence)</h4>
+            <p><strong>Theory:</strong> User submitted the same content twice by double-clicking submit button</p>
+            <p><strong>Supporting Evidence Needed:</strong></p>
+            <ul>
+                <li>✓ Two ingestion requests from same user within 2 seconds</li>
+                <li>✓ Different asset_ids but identical external_id</li>
+                <li>✓ Different traceIDs (separate requests)</li>
+                <li>? Check: Are request payloads identical?</li>
+                <li>? Check: Is there frontend debouncing implemented?</li>
+            </ul>
+        </div>
+
+        <div class="hypothesis">
+            <h4>Hypothesis 2: Retry Logic Without Idempotency (SECONDARY - 10% confidence)</h4>
+            <p><strong>Theory:</strong> Client retry mechanism re-sent the request</p>
+            <p><strong>Supporting Evidence Needed:</strong></p>
+            <ul>
+                <li>✗ No retry headers in logs</li>
+                <li>✗ TraceIDs are different (not a retry of same request)</li>
+                <li>Likelihood: LOW</li>
+            </ul>
+        </div>
+
+        <div class="hypothesis">
+            <h4>Hypothesis 3: SQS Duplicate Message Processing (TERTIARY - 5% confidence)</h4>
+            <p><strong>Theory:</strong> SQS delivered the same message twice</p>
+            <p><strong>Supporting Evidence Needed:</strong></p>
+            <ul>
+                <li>✗ Two different asset_ids were created (not the same message)</li>
+                <li>✗ Different traceIDs from ingestion</li>
+                <li>Likelihood: VERY LOW</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <span class="step-number">7</span>
+            <strong>Evidence Collection</strong>
+            <p>Agent performs deep-dive queries to validate hypotheses:</p>
+        </div>
+
+        <div class="evidence">
+            <strong>Evidence Query 1:</strong> Check DynamoDB for both asset records
+            <div class="log-entry" style="margin-top: 10px;">
+DynamoDB Query Results:
+
+Record 1:
+{
+  "asset_id": "ASSET_789",
+  "external_id": "EXT_456",
+  "created_at": "2026-02-03T14:15:00.456Z",
+  "user_id": "user_john",
+  "title": "My Awesome Video",
+  "content_type": "video",
+  "status": "PROCESSED"
+}
+
+Record 2:
+{
+  "asset_id": "ASSET_790",
+  "external_id": "EXT_456",  // <-- DUPLICATE!
+  "created_at": "2026-02-03T14:15:02.567Z",
+  "user_id": "user_john",
+  "title": "My Awesome Video",  // <-- IDENTICAL PAYLOAD!
+  "content_type": "video",
+  "status": "FAILED"
+}
+
+✓ CONFIRMS: Payloads are identical except timestamps
+✓ CONFIRMS: Both from same user
+✓ CONFIRMS: 2-second gap between submissions
+            </div>
+        </div>
+
+        <div class="evidence">
+            <strong>Evidence Query 2:</strong> Check API Gateway logs for duplicate requests
+            <div class="log-entry" style="margin-top: 10px;">
+API Gateway Access Logs:
+
+2026-02-03T14:15:00.050Z POST /api/content/ingest user_john source_ip:192.168.1.100
+2026-02-03T14:15:02.100Z POST /api/content/ingest user_john source_ip:192.168.1.100
+
+✓ CONFIRMS: Two POST requests from same IP
+✓ CONFIRMS: 2-second interval
+✓ CONFIRMS: No retry headers present
+            </div>
+        </div>
+
+        <div class="evidence">
+            <strong>Evidence Query 3:</strong> Check API Gateway logs for duplicate requests
+            <div class="log-entry" style="margin-top: 10px;">
+API Gateway Access Logs:
+
+2026-02-03T14:15:00.050Z POST /api/content/ingest user_john source_ip:192.168.1.100
+2026-02-03T14:15:02.100Z POST /api/content/ingest user_john source_ip:192.168.1.100
+
+✓ CONFIRMS: Two POST requests from same IP
+✓ CONFIRMS: 2-second interval
+✓ CONFIRMS: No retry headers present
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">7.5</span>
+            <strong>Code Analysis via RAG</strong>
+            <p>Agent queries the code RAG system to understand validation logic:</p>
+        </div>
+
+        <div class="evidence">
+            <strong>Code Query 1:</strong> "How does DB Interface validate external_id uniqueness?"
+            <div class="log-entry" style="margin-top: 10px;">
+<strong>RAG Response - Top Match (Confidence: 0.92)</strong>
+
+File: src/main/java/com/platform/dbinterface/DBInterfaceService.java
+Function: validateContent(ContentRequest request)
+
+Code:
+public void validateContent(ContentRequest request) {
+    // Check required fields
+    if (request.getExternalId() == null || request.getExternalId().isEmpty()) {
+        throw new ValidationException("external_id is required");
+    }
+    
+    if (request.getTitle() == null || request.getTitle().isEmpty()) {
+        throw new ValidationException("title is required");
+    }
+    
+    // TODO: Add uniqueness check against DynamoDB
+    // Currently only validates presence, not uniqueness!
+    
+    log.info("Validation passed for external_id: {}", request.getExternalId());
+}
+
+<strong>Agent Analysis:</strong>
+✗ CRITICAL GAP IDENTIFIED: Validation only checks if external_id exists, NOT if it's unique
+✗ TODO comment confirms this was a known missing feature
+✗ This explains why both duplicate submissions passed validation
+            </div>
+        </div>
+
+        <div class="evidence">
+            <strong>Code Query 2:</strong> "Does the frontend have debouncing on submit?"
+            <div class="log-entry" style="margin-top: 10px;">
+<strong>RAG Response - Top Match (Confidence: 0.88)</strong>
+
+File: frontend/components/ContentUpload.jsx
+Function: handleSubmit
+
+Code:
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  
+  try {
+    await api.post('/api/content/ingest', formData);
+    showSuccess('Content uploaded!');
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Button render
+&lt;button onClick={handleSubmit}&gt;Submit Content&lt;/button&gt;
+
+<strong>Agent Analysis:</strong>
+✗ NO DEBOUNCING: Button can be clicked multiple times rapidly
+✗ NO DISABLED STATE: Button remains clickable during submission
+✗ ALLOWS RAPID CLICKS: setLoading(true) doesn't disable the button
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">8</span>
+            <strong>Root Cause Determination</strong>
+        </div>
+
+        <div class="verdict">
+            <h4>✓ ROOT CAUSE CONFIRMED: User Double-Click Submission</h4>
+            <p><strong>Confidence:</strong> 95%</p>
+            <p><strong>Evidence Summary:</strong></p>
+            <ul>
+                <li>✓ Two identical payloads submitted 2 seconds apart</li>
+                <li>✓ Same user, same IP address</li>
+                <li>✓ Frontend lacks debouncing and button disabling</li>
+                <li>✓ No idempotency check in DB Interface</li>
+                <li>✓ Each request generated separate asset_id</li>
+                <li>✓ Both processed successfully until normalized table write</li>
+                <li>✓ Second write failed on unique constraint</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <span class="step-number">9</span>
+            <strong>Impact Analysis</strong>
+            <p>Agent traces the impact through the system:</p>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Impact</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td>DynamoDB</td>
+                    <td>Two records created (ASSET_789, ASSET_790)</td>
+                    <td>⚠️ Needs cleanup</td>
+                </tr>
+                <tr>
+                    <td>SQS Queue</td>
+                    <td>Two messages processed</td>
+                    <td>✓ Completed</td>
+                </tr>
+                <tr>
+                    <td>Image Processing</td>
+                    <td>Same image processed twice</td>
+                    <td>⚠️ Wasted resources</td>
+                </tr>
+                <tr>
+                    <td>Normalized Tables</td>
+                    <td>ASSET_789 written successfully, ASSET_790 failed</td>
+                    <td>⚠️ Inconsistent state</td>
+                </tr>
+                <tr>
+                    <td>User Experience</td>
+                    <td>User sees one success, expects content to be live</td>
+                    <td>⚠️ User may be confused</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="step">
+            <span class="step-number">10</span>
+            <strong>Generate RCA Report</strong>
+        </div>
+
+        <div class="example-box">
+            <h3>📋 AUTOMATED RCA REPORT</h3>
+            
+            <p><strong>Incident ID:</strong> INC-2026-02-03-001</p>
+            <p><strong>Detection Time:</strong> 2026-02-03 14:23:45 UTC</p>
+            <p><strong>Analysis Completed:</strong> 2026-02-03 14:24:12 UTC (27 seconds)</p>
+            <p><strong>Asset ID:</strong> ASSET_789 / ASSET_790</p>
+            
+            <hr style="margin: 20px 0;">
+            
+            <h4>ROOT CAUSE</h4>
+            <p><strong>Duplicate Content Ingestion - User Double-Click Submission</strong></p>
+            <p>User <code>user_john</code> submitted the same content twice within 2 seconds (14:15:00 and 14:15:02) by double-clicking the submit button. The frontend lacks debouncing and button state management, allowing rapid successive clicks. The DB Interface service does not perform idempotency checks, so both requests were treated as unique ingestions despite having identical <code>external_id</code> values.</p>
+            
+            <hr style="margin: 20px 0;">
+            
+            <h4>TIMELINE OF EVENTS</h4>
+            <table style="font-size: 13px;">
+                <tr>
+                    <th style="width: 180px;">Timestamp</th>
+                    <th>Event</th>
+                    <th>Service</th>
+                    <th>TraceID</th>
+                </tr>
+                <tr>
+                    <td>14:15:00.123</td>
+                    <td>First ingestion request received</td>
+                    <td>DB Interface</td>
+                    <td>trace-abc-123</td>
+                </tr>
+                <tr>
+                    <td>14:15:00.456</td>
+                    <td>Created ASSET_789 in DynamoDB</td>
+                    <td>DB Interface</td>
+                    <td>trace-abc-123</td>
+                </tr>
+                <tr>
+                    <td>14:15:00.789</td>
+                    <td>Published to SQS</td>
+                    <td>DB Interface</td>
+                    <td>trace-abc-123</td>
+                </tr>
+                <tr style="background: #fff3cd !important;">
+                    <td>14:15:02.234</td>
+                    <td><strong>Second ingestion request (duplicate)</strong></td>
+                    <td>DB Interface</td>
+                    <td>trace-def-456</td>
+                </tr>
+                <tr>
+                    <td>14:15:02.567</td>
+                    <td>Created ASSET_790 in DynamoDB</td>
+                    <td>DB Interface</td>
+                    <td>trace-def-456</td>
+                </tr>
+                <tr>
+                    <td>14:17:46.012</td>
+                    <td>ASSET_789 processed successfully</td>
+                    <td>Content Processor</td>
+                    <td>trace-abc-123</td>
+                </tr>
+                <tr style="background: #ffebee !important;">
+                    <td>14:19:16.123</td>
+                    <td><strong>ASSET_790 failed - duplicate key error</strong></td>
+                    <td>Content Processor</td>
+                    <td>trace-def-456</td>
+                </tr>
+            </table>
+            
+            <hr style="margin: 20px 0;">
+            
+            <h4>EVIDENCE</h4>
+            <ol>
+                <li><strong>DynamoDB Records:</strong> Two records with identical payloads (except timestamps) but different asset_ids</li>
+                <li><strong>API Gateway Logs:</strong> Two POST requests from same user (user_john) and IP (192.168.1.100) 2 seconds apart</li>
+                <li><strong>No Retry Headers:</strong> Requests are independent, not retries</li>
+                <li><strong>Code Analysis (Backend):</strong> DB Interface validation code has TODO comment confirming missing uniqueness check - only validates presence, not uniqueness</li>
+                <li><strong>Code Analysis (Frontend):</strong> Submit button lacks debouncing and disabled state during submission</li>
+            </ol>
+            
+            <hr style="margin: 20px 0;">
+            
+            <h4>IMMEDIATE REMEDIATION</h4>
+            <ol>
+                <li>Delete orphaned record ASSET_790 from DynamoDB</li>
+                <li>Verify ASSET_789 is correctly present in normalized tables with external_id: EXT_456</li>
+                <li>Notify user_john that their content was successfully ingested (only once)</li>
+            </ol>
+            
+            <hr style="margin: 20px 0;">
+            
+            <h4>PERMANENT FIX RECOMMENDATIONS</h4>
+            
+            <p><strong>High Priority (Prevent recurrence):</strong></p>
+            <ol>
+                <li><strong>Frontend:</strong> Add debouncing (300ms) and disable submit button during API calls
+                    <br><em>Owner: Frontend Team | Estimated Effort: 1 hour</em></li>
+                <li><strong>DB Interface:</strong> Implement idempotency check - query DynamoDB for existing external_id before creating new asset
+                    <br><em>Owner: Backend Team | Estimated Effort: 4 hours</em></li>
+            </ol>
+            
+            <p><strong>Medium Priority (Defense in depth):</strong></p>
+            <ol start="3">
+                <li><strong>DynamoDB:</strong> Consider adding a secondary index on external_id for faster duplicate detection
+                    <br><em>Owner: Backend Team | Estimated Effort: 2 hours</em></li>
+                <li><strong>Monitoring:</strong> Add alert for duplicate external_id ingestion attempts
+                    <br><em>Owner: DevOps Team | Estimated Effort: 1 hour</em></li>
+            </ol>
+            
+            <hr style="margin: 20px 0;">
+            
+            <h4>SERVICES INVOLVED</h4>
+            <p>API Gateway → DB Interface → Content Validator → DynamoDB → SQS → Content Processor → Normalized DB</p>
+            
+            <h4>RELATED TRACES</h4>
+            <ul>
+                <li>trace-abc-123 (successful ingestion)</li>
+                <li>trace-def-456 (failed duplicate ingestion)</li>
+            </ul>
+            
+            <h4>LEARNING RECORDED</h4>
+            <p>✓ Pattern added to error library: "Duplicate external_id ingestion via rapid user clicks"</p>
+            <p>✓ Knowledge base updated with mitigation strategies</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🧠 How Context Guides the Agent</h2>
+        
+        <p>The agent uses context at every decision point. Here's how:</p>
+
+        <h3>Decision Point 1: Where to Start Investigation?</h3>
+        <div class="mermaid">
+graph LR
+    A[Error in Asset Service] --> B{Query Knowledge Base}
+    B --> C[Asset Service depends on Content Processor]
+    C --> D[Content Processor depends on SQS]
+    D --> E[SQS depends on DB Interface]
+    E --> F{Start at DB Interface - root of ingestion}
+    F --> G[Search logs from DB Interface forward]
+        </div>
+
+        <p><strong>Without Context:</strong> Agent might randomly search all 10 services</p>
+        <p><strong>With Context:</strong> Agent knows the dependency chain and starts at the source</p>
+
+        <h3>Decision Point 2: Which Logs Matter?</h3>
+        <div class="knowledge-base">
+            <p><strong>Knowledge Base says:</strong></p>
+            <ul>
+                <li>For duplicate key errors, check ingestion layer first</li>
+                <li>external_id is set during ingestion, never modified</li>
+                <li>Content Processor just copies values from DynamoDB to normalized tables</li>
+            </ul>
+            <p><strong>Agent Decision:</strong> Focus on DB Interface and DynamoDB, not Content Processor (which is just a symptom)</p>
+        </div>
+
+        <h3>Decision Point 3: What Questions to Ask?</h3>
+        <table>
+            <tr>
+                <th>Without Context</th>
+                <th>With Context (Knowledge-Driven)</th>
+            </tr>
+            <tr>
+                <td>"Are there any errors in logs?"</td>
+                <td>"Are there multiple asset_ids with the same external_id in DynamoDB?"</td>
+            </tr>
+            <tr>
+                <td>"Check all services"</td>
+                <td>"Check ingestion flow: DB Interface → Validator → SQS"</td>
+            </tr>
+            <tr>
+                <td>"What went wrong?"</td>
+                <td>"Based on error pattern library, this matches duplicate ingestion - validate by checking for rapid submissions"</td>
+            </tr>
+        </table>
+
+        <h3>Decision Point 4: When to Stop Investigating?</h3>
+        <div class="mermaid">
+graph TD
+    A[Hypothesis Generated] --> B{Enough Evidence?}
+    B -->|No| C[Continue Investigation]
+    B -->|Yes| D{Confidence > 80%?}
+    D -->|No| E[Generate Multiple Hypotheses]
+    D -->|Yes| F[Report Root Cause]
+    C --> G[Query More Logs]
+    G --> H[Check Code]
+    H --> I[Validate Against Knowledge Base]
+    I --> B
+    E --> J[Present All Plausible Causes]
+        </div>
+
+        <p><strong>Context-driven stopping criteria:</strong></p>
+        <ul>
+            <li>Evidence matches known pattern in error library</li>
+            <li>All expected log entries found (per data flow definition)</li>
+            <li>Timeline aligns with expected behavior</li>
+            <li>Code validates the hypothesis</li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h2>🔄 Learning Loop: Getting Smarter Over Time</h2>
+        
+        <p>After each incident, the agent updates its knowledge:</p>
+
+        <div class="mermaid">
+graph LR
+    A[RCA Generated] --> B[Human Confirms/Corrects]
+    B --> C{Was RCA Correct?}
+    C -->|Yes| D[Increase Pattern Confidence]
+    C -->|No| E[Learn New Pattern]
+    D --> F[Update Error Library]
+    E --> F
+    F --> G[Future Incidents Use Enhanced Knowledge]
+    
+    style D fill:#4caf50,stroke:#388e3c,color:#fff
+    style E fill:#ff9800,stroke:#f57c00,color:#fff
+        </div>
+
+        <h3>Example: Learning from Correction</h3>
+        
+        <div class="scenario">
+            <p><strong>Incident #1:</strong> Agent correctly identified duplicate ingestion (confidence: 85%)</p>
+            <p><strong>Human Feedback:</strong> ✓ Correct</p>
+            <p><strong>Agent Learning:</strong> Increase confidence in "duplicate ingestion via double-click" pattern to 95%</p>
+        </div>
+
+        <div class="scenario">
+            <p><strong>Incident #2:</strong> Similar duplicate key error, agent suspects double-click again</p>
+            <p><strong>Human Feedback:</strong> ✗ Incorrect - this was actually a bug in batch job creating duplicates</p>
+            <p><strong>Agent Learning:</strong></p>
+            <ul>
+                <li>Create new pattern: "Duplicate key from batch job"</li>
+                <li>Add discriminator: "If error occurs outside user request context, check batch jobs"</li>
+                <li>Update investigation steps: "Check Status Sync Batch logs for duplicate writes"</li>
+            </ul>
+        </div>
+
+        <h3>Knowledge Evolution Over Time</h3>
+        <table>
+            <tr>
+                <th>Week</th>
+                <th>Incidents</th>
+                <th>Patterns Learned</th>
+                <th>Accuracy</th>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>5</td>
+                <td>3 (from initial setup)</td>
+                <td>60%</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>8</td>
+                <td>5 (learned 2 new)</td>
+                <td>72%</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>12</td>
+                <td>9 (learned 4 more)</td>
+                <td>85%</td>
+            </tr>
+            <tr style="background: #c8e6c9;">
+                <td>8</td>
+                <td>15</td>
+                <td>15 (refined existing)</td>
+                <td>94%</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="container">
+        <h2>🎯 Multi-Service Error Example</h2>
+        
+        <p>Let's see how the agent handles a more complex cascading failure:</p>
+
+        <div class="scenario">
+            <h3>⚠️ Complex Incident</h3>
+            <p><strong>Alert:</strong> Multiple services reporting errors</p>
+            <p><strong>Symptoms:</strong></p>
+            <ul>
+                <li>Content Processor: "Timeout calling Image Processing Service"</li>
+                <li>Image Processing Service: "Rate limit exceeded"</li>
+                <li>Status Sync Batch: "Failed to update asset status - connection timeout"</li>
+            </ul>
+            <p><strong>Time:</strong> 2026-02-03 16:00:00 - 16:30:00 (30-minute window)</p>
+        </div>
+
+        <h3>Agent's Multi-Service Analysis</h3>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Error Correlation</strong>
+            <p>Agent identifies these are related by analyzing timestamps and service dependencies:</p>
+            <div class="mermaid">
+graph TD
+    A[Content Processor Timeouts<br/>16:05 - 16:30] --> B[Image Processing Service]
+    B --> C[Rate Limit Exceeded<br/>Starting 16:05]
+    D[Status Sync Batch Timeouts<br/>16:15 - 16:30] --> E[Normalized DB]
+    E --> F[Connection Pool Exhausted<br/>16:15]
+    
+    style C fill:#e74c3c,stroke:#c0392b,color:#fff
+    style F fill:#e74c3c,stroke:#c0392b,color:#fff
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Root Cause Discovery</strong>
+            <p>Agent queries logs and finds:</p>
+        </div>
+
+        <div class="log-entry">
+// Image Processing Service - 16:04:58
+{
+  "timestamp": "2026-02-03T16:04:58.123Z",
+  "service": "image_processing",
+  "level": "INFO",
+  "message": "Processing request rate: 50 req/sec (normal: 10 req/sec)"
+}
+
+// Image Processing Service - 16:05:00
+{
+  "timestamp": "2026-02-03T16:05:00.456Z",
+  "service": "image_processing",
+  "level": "ERROR",
+  "message": "Rate limit exceeded: 1000 requests in last minute (limit: 600)"
+}
+
+// Content Processor - 16:05:05
+{
+  "timestamp": "2026-02-03T16:05:05.789Z",
+  "service": "content_processor",
+  "level": "ERROR",
+  "traceID": "trace-xyz-789",
+  "message": "Image processing timeout after 30s"
+}
+
+// Content Processor - 16:05:05 (retry mechanism)
+{
+  "timestamp": "2026-02-03T16:05:05.890Z",
+  "service": "content_processor",
+  "level": "INFO",
+  "traceID": "trace-xyz-789",
+  "message": "Retrying image processing (attempt 1 of 3)"
+}
+
+// Agent notices: Content Processor is RETRYING, making the rate limit worse!
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Chain Reaction Analysis</strong>
+            <p>Agent traces the cascading failure:</p>
+        </div>
+
+        <div class="mermaid">
+graph TD
+    A[Root Cause:<br/>Sudden spike in content ingestion<br/>5x normal rate] --> B[Content Processor<br/>processes 5x messages]
+    B --> C[Image Processing Service<br/>receives 5x requests]
+    C --> D[Rate Limit Hit<br/>Requests start failing]
+    D --> E[Content Processor<br/>implements retry logic]
+    E --> F[MORE requests to<br/>Image Service]
+    F --> G[Timeouts increase]
+    G --> H[Content Processor<br/>keeps assets in PROCESSING state]
+    H --> I[Status Sync Batch<br/>tries to query all PROCESSING assets]
+    I --> J[Database overwhelmed<br/>by long-running queries]
+    J --> K[Connection pool exhausted]
+    
+    style A fill:#e74c3c,stroke:#c0392b,color:#fff
+    style D fill:#ff9800,stroke:#f57c00,color:#fff
+    style K fill:#e74c3c,stroke:#c0392b,color:#fff
+        </div>
+
+        <div class="verdict">
+            <h4>✓ ROOT CAUSE: Sudden 5x Spike in Content Ingestion</h4>
+            <p><strong>Primary Cause:</strong> Marketing campaign launched at 16:00 without engineering notification</p>
+            <p><strong>Cascading Failures:</strong></p>
+            <ol>
+                <li>Image Processing Service hit rate limit</li>
+                <li>Content Processor retry logic exacerbated the problem</li>
+                <li>Assets stuck in PROCESSING state</li>
+                <li>Status Sync Batch queries became expensive</li>
+                <li>Database connection pool exhausted</li>
+            </ol>
+            <p><strong>Knowledge Base Match:</strong> "Traffic spike without capacity planning" pattern</p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Recommendations</strong>
+        </div>
+
+        <div class="example-box">
+            <h4>Immediate Actions:</h4>
+            <ol>
+                <li>Temporarily increase Image Processing Service rate limit (coordinate with vendor)</li>
+                <li>Scale up Content Processor instances to handle backlog</li>
+                <li>Pause Status Sync Batch until backlog clears</li>
+            </ol>
+            
+            <h4>Short-term Fixes:</h4>
+            <ol>
+                <li>Implement circuit breaker in Content Processor (stop retrying when Image Service is down)</li>
+                <li>Add exponential backoff to retry logic</li>
+                <li>Optimize Status Sync Batch queries (add indexes, limit query scope)</li>
+            </ol>
+            
+            <h4>Long-term Improvements:</h4>
+            <ol>
+                <li>Implement auto-scaling for Content Processor based on SQS queue depth</li>
+                <li>Add rate limiting at ingestion layer to prevent overload</li>
+                <li>Create communication protocol: Marketing notifies Engineering 24h before campaigns</li>
+                <li>Implement better observability: alert on rate spikes before hitting limits</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Context Structure Summary</h2>
+        
+        <p>The agent's knowledge base is structured in layers:</p>
+
+        <table>
+            <tr>
+                <th>Layer</th>
+                <th>What It Contains</th>
+                <th>How Agent Uses It</th>
+            </tr>
+            <tr>
+                <td><strong>Service Topology</strong></td>
+                <td>
+                    • Service definitions<br>
+                    • Dependencies (upstream/downstream)<br>
+                    • Service types & technologies<br>
+                    • Log locations
+                </td>
+                <td>
+                    • Determines investigation path<br>
+                    • Knows where to find logs<br>
+                    • Understands service relationships
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Data Flows</strong></td>
+                <td>
+                    • Step-by-step request flows<br>
+                    • Expected log messages<br>
+                    • Timing expectations<br>
+                    • State transitions
+                </td>
+                <td>
+                    • Builds accurate timelines<br>
+                    • Identifies missing steps<br>
+                    • Detects anomalies (too slow, skipped steps)
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Error Patterns</strong></td>
+                <td>
+                    • Known error signatures<br>
+                    • Common root causes<br>
+                    • Investigation playbooks<br>
+                    • Resolution steps
+                </td>
+                <td>
+                    • Pattern matching for fast diagnosis<br>
+                    • Generates hypotheses<br>
+                    • Suggests fixes
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Business Rules</strong></td>
+                <td>
+                    • Validation rules<br>
+                    • Data constraints<br>
+                    • SLAs & timeouts<br>
+                    • Expected behaviors
+                </td>
+                <td>
+                    • Validates if behavior is correct<br>
+                    • Identifies rule violations<br>
+                    • Determines severity
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Historical Data</strong></td>
+                <td>
+                    • Past incidents<br>
+                    • Confirmed root causes<br>
+                    • Pattern frequency<br>
+                    • Effectiveness of fixes
+                </td>
+                <td>
+                    • Improves pattern matching<br>
+                    • Learns from corrections<br>
+                    • Adjusts confidence levels
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="container" style="border: 3px solid #ff9800; background: #fff3e0;">
+        <h2>🔧 Alternative Approach: Multi-Agent Architecture</h2>
+        
+        <div class="scenario">
+            <h3>⚠️ Why Consider Multi-Agent Architecture?</h3>
+            <p><strong>The Context Window Challenge:</strong></p>
+            <p>As your system grows, a single agent faces context limits. With 10+ services, detailed logs, code snippets, and knowledge base all loaded into one agent, the context window can become crowded (35K-50K tokens). This impacts:</p>
+            <ul>
+                <li>Agent's ability to reason about all information simultaneously</li>
+                <li>Response time (larger context = slower processing)</li>
+                <li>Scalability (hard to grow beyond 20-30 services)</li>
+            </ul>
+            <p><strong>The Solution:</strong> Distribute responsibilities across specialized agents, each with focused context.</p>
+        </div>
+
+        <h3>Multi-Agent Architecture Design</h3>
+
+        <div class="mermaid">
+graph TB
+    OA[Orchestrator Agent<br/>Lightweight - 15K tokens<br/>Coordinates & Synthesizes]
+    
+    LA[Log Intelligence Agent<br/>20-30K tokens<br/>Log Analysis & Correlation]
+    
+    CA[Code Analysis Agent<br/>15-20K tokens<br/>RAG Queries & Code Understanding]
+    
+    KA[Knowledge Graph Agent<br/>20-25K tokens<br/>System Architecture Expert]
+    
+    OA --> LA
+    OA --> CA
+    OA --> KA
+    
+    LA --> LP[Log Platform<br/>Datadog/CloudWatch]
+    CA --> RAG[Code RAG<br/>Vector Database]
+    KA --> KB[Knowledge Base<br/>YAML Files]
+    
+    style OA fill:#9b59b6,stroke:#8e44ad,color:#fff
+    style LA fill:#3498db,stroke:#2980b9,color:#fff
+    style CA fill:#e74c3c,stroke:#c0392b,color:#fff
+    style KA fill:#27ae60,stroke:#229954,color:#fff
+        </div>
+
+        <h3>Agent Roles & Responsibilities</h3>
+
+        <table>
+            <tr>
+                <th>Agent</th>
+                <th>Responsibilities</th>
+                <th>Context Usage</th>
+                <th>Queries</th>
+            </tr>
+            <tr>
+                <td><strong>Orchestrator</strong><br/>(The Brain)</td>
+                <td>
+                    • Creates investigation plan<br>
+                    • Coordinates specialist agents<br>
+                    • Synthesizes findings<br>
+                    • Generates final RCA<br>
+                    • Manages human conversations
+                </td>
+                <td>~15K tokens<br/>
+                    • System prompt<br>
+                    • Investigation plan<br>
+                    • Specialist responses<br>
+                    • Current reasoning
+                </td>
+                <td>
+                    • "What's the data flow?"<br>
+                    • "Get me the timeline"<br>
+                    • "Why did validation fail?"
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Log Intelligence</strong><br/>(The Detective)</td>
+                <td>
+                    • Query log platform<br>
+                    • Correlate logs via traceID<br>
+                    • Build timelines<br>
+                    • Identify patterns<br>
+                    • Return summaries
+                </td>
+                <td>~20-30K tokens<br/>
+                    • Specialist prompt<br>
+                    • Focused log entries<br>
+                    • Correlation results
+                </td>
+                <td>
+                    "Find all logs for traceID xyz"<br>
+                    "Timeline for asset ASSET_789"
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Code Analysis</strong><br/>(The Code Expert)</td>
+                <td>
+                    • Query code RAG system<br>
+                    • Explain validation logic<br>
+                    • Find configurations<br>
+                    • Identify code gaps<br>
+                    • Return explanations
+                </td>
+                <td>~15-20K tokens<br/>
+                    • Specialist prompt<br>
+                    • Relevant code snippets<br>
+                    • Analysis context
+                </td>
+                <td>
+                    "How does DB Interface validate?"<br>
+                    "Show timeout config"
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Knowledge Graph</strong><br/>(The Architect)</td>
+                <td>
+                    • Answer service dependencies<br>
+                    • Explain data flows<br>
+                    • Identify affected components<br>
+                    • Suggest investigation paths
+                </td>
+                <td>~20-25K tokens<br/>
+                    • Specialist prompt<br>
+                    • Complete knowledge graph<br>
+                    • Flow definitions
+                </td>
+                <td>
+                    "What's the ingestion flow?"<br>
+                    "Services depending on SQS?"
+                </td>
+            </tr>
+        </table>
+
+        <h3>Practical Investigation Example: Multi-Agent in Action</h3>
+
+        <div class="scenario">
+            <h4>Error Detected</h4>
+            <p><strong>Alert:</strong> Duplicate key in Asset Service<br>
+            <strong>Time:</strong> 14:23:45<br>
+            <strong>Asset:</strong> ASSET_789</p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Orchestrator Agent - Initial Planning</strong>
+            <div class="example-box" style="margin-top: 10px;">
+                <p><strong>Orchestrator's Internal Reasoning:</strong></p>
+                <div class="log-entry">
+Error type: Database constraint violation
+Severity: Medium
+Investigation strategy:
+  1. Understand the service architecture (ask Knowledge Agent)
+  2. Trace the request flow (ask Log Agent)
+  3. Verify business logic (ask Code Agent)
+  4. Synthesize root cause
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Query → Knowledge Graph Agent</strong>
+            <div class="example-box" style="margin-top: 10px;">
+                <p><strong>Orchestrator asks:</strong><br>
+                "What services are involved when Asset Service writes to the database?"</p>
+                
+                <p style="margin-top: 10px;"><strong>Knowledge Graph Agent responds:</strong></p>
+                <div class="log-entry">
+Asset Service is downstream of the content ingestion pipeline:
+
+Flow: DB Interface → SQS → Content Processor → Asset Service
+
+Relevant services:
+  • DB Interface: Initial ingestion point, generates asset_id
+  • Content Validator: Validates payload structure
+  • SQS Queue: Async processing queue
+  • Content Processor: Processes content and writes to normalized tables
+  • Asset Service: Final persistence layer
+
+Data origin: external_id field comes from the original ingestion request
+                </div>
+                
+                <p><strong>Context Usage:</strong> ~8K tokens (full knowledge graph loaded)</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Query → Log Intelligence Agent</strong>
+            <div class="example-box" style="margin-top: 10px;">
+                <p><strong>Orchestrator asks:</strong><br>
+                "Find all logs related to ASSET_789 in the ingestion pipeline"</p>
+                
+                <p style="margin-top: 10px;"><strong>Log Intelligence Agent responds:</strong></p>
+                <div class="log-entry">
+<strong>Timeline Summary for ASSET_789:</strong>
+
+FIRST INGESTION (traceID: trace-abc-123):
+  14:15:00.123 - DB Interface received request
+    User: user_john
+    External ID: EXT_456
+    
+  14:15:00.456 - DynamoDB write successful
+  14:15:00.789 - Published to SQS
+  14:17:46.012 - Content processing completed
+  14:17:46.200 - Written to normalized tables ✓
+
+SECOND INGESTION (traceID: trace-def-456):
+  14:15:02.234 - DB Interface received request
+    User: user_john (SAME USER!)
+    External ID: EXT_456 (SAME ID!)
+    Asset ID: ASSET_790 (DIFFERENT ASSET!)
+    
+  14:15:02.567 - DynamoDB write successful
+  14:15:02.890 - Published to SQS
+  14:19:16.123 - Content processing FAILED ✗
+    Error: Duplicate key constraint on 'external_id'
+
+<strong>Key Findings:</strong>
+• Two separate ingestion flows with same external_id
+• Requests arrived 2 seconds apart
+• Same user initiated both
+• Both passed initial validation
+• Second failed at normalized table write
+                </div>
+                
+                <p><strong>Context Usage:</strong> ~22K tokens (focused logs + timeline)</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Query → Code Analysis Agent</strong>
+            <div class="example-box" style="margin-top: 10px;">
+                <p><strong>Orchestrator asks:</strong><br>
+                "How does DB Interface validate external_id uniqueness before ingestion?"</p>
+                
+                <p style="margin-top: 10px;"><strong>Code Analysis Agent responds:</strong></p>
+                <div class="log-entry">
+<strong>Validation Code Analysis:</strong>
+
+File: DBInterfaceService.java
+Function: validateContent()
+
+Current Implementation:
+  ✓ Checks if external_id is present (not null/empty)
+  ✗ Does NOT check if external_id already exists in DynamoDB
+  
+Critical Finding:
+  Line 45 contains TODO comment:
+  "// TODO: Add uniqueness check against DynamoDB"
+  
+This explains why duplicate submissions both passed validation.
+
+Frontend Code Analysis:
+File: ContentUpload.jsx
+
+  ✗ No debouncing implemented
+  ✗ Button not disabled during submission
+  ✗ Multiple rapid clicks are possible
+
+<strong>Conclusion:</strong>
+Missing validation logic in backend + no frontend protection 
+= allows duplicate ingestions
+                </div>
+                
+                <p><strong>Context Usage:</strong> ~18K tokens (relevant code snippets + analysis)</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">5</span>
+            <strong>Orchestrator - Synthesis & RCA Generation</strong>
+            <div class="verdict" style="margin-top: 10px;">
+                <h4>✓ ROOT CAUSE DETERMINED</h4>
+                <p><strong>Primary Cause:</strong> User Double-Click + Missing Validation</p>
+                
+                <p><strong>Evidence Synthesis:</strong></p>
+                <ul>
+                    <li><strong>From Knowledge Agent:</strong> Confirmed data flow and service responsibilities</li>
+                    <li><strong>From Log Agent:</strong> Two ingestions 2 seconds apart, same user, same external_id</li>
+                    <li><strong>From Code Agent:</strong> Validation gap confirmed (TODO comment), no frontend protection</li>
+                </ul>
+                
+                <p><strong>Confidence:</strong> 95%</p>
+                <p><strong>Total Investigation Time:</strong> ~8 seconds (parallel queries)</p>
+            </div>
+        </div>
+
+        <h3>Token Usage Breakdown - Multi-Agent vs Single Agent</h3>
+
+        <table>
+            <tr>
+                <th>Approach</th>
+                <th>Component</th>
+                <th>Tokens</th>
+                <th>Total</th>
+            </tr>
+            <tr>
+                <td rowspan="4"><strong>Single Agent</strong></td>
+                <td>System prompt & instructions</td>
+                <td>~5,000</td>
+                <td rowspan="4" style="background: #ffebee; font-weight: bold;">~37,500 tokens<br/><br/>⚠️ Crowded context</td>
+            </tr>
+            <tr>
+                <td>Full knowledge base loaded</td>
+                <td>~12,000</td>
+            </tr>
+            <tr>
+                <td>Log entries (20-50 logs)</td>
+                <td>~8,000</td>
+            </tr>
+            <tr>
+                <td>Code snippets + timeline + reasoning</td>
+                <td>~12,500</td>
+            </tr>
+            <tr>
+                <td rowspan="4"><strong>Multi-Agent</strong></td>
+                <td>Orchestrator Agent</td>
+                <td>~15,000</td>
+                <td rowspan="4" style="background: #e8f5e9; font-weight: bold;">~63,000 tokens<br/>(distributed)<br/><br/>✓ No single agent exceeds 30K</td>
+            </tr>
+            <tr>
+                <td>Log Intelligence Agent</td>
+                <td>~22,000</td>
+            </tr>
+            <tr>
+                <td>Code Analysis Agent</td>
+                <td>~18,000</td>
+            </tr>
+            <tr>
+                <td>Knowledge Graph Agent</td>
+                <td>~8,000</td>
+            </tr>
+        </table>
+
+        <h3>Key Advantages of Multi-Agent Architecture</h3>
+
+        <div class="example-box">
+            <h4>✓ Context Efficiency</h4>
+            <p>Each agent maintains focused context. The Orchestrator never loads full logs, full code, or every service detail—it asks specific questions and gets specific answers.</p>
+            
+            <h4>✓ Parallelization</h4>
+            <p>Orchestrator can query multiple specialist agents simultaneously. Log Agent and Code Agent can work in parallel, reducing investigation time.</p>
+            
+            <h4>✓ Scalability</h4>
+            <p>Easy to add new specialists as system grows:
+                <ul>
+                    <li>Database Expert Agent (for complex DB issues)</li>
+                    <li>Performance Analysis Agent (for latency/timeout issues)</li>
+                    <li>External Integration Agent (for third-party service issues)</li>
+                </ul>
+            </p>
+            
+            <h4>✓ Maintainability</h4>
+            <p>Each specialist agent has clear, focused responsibilities. Updates to log analysis logic don't affect code analysis agent.</p>
+            
+            <h4>✓ Expertise Depth</h4>
+            <p>Specialists can have deeper knowledge in their domain without overloading the main agent's context.</p>
+        </div>
+
+        <h3>When to Use Multi-Agent Architecture</h3>
+
+        <table>
+            <tr>
+                <th>System Characteristic</th>
+                <th>Single Agent</th>
+                <th>Multi-Agent</th>
+            </tr>
+            <tr>
+                <td><strong>Number of Services</strong></td>
+                <td>✓ 10-20 services</td>
+                <td>✓ 20+ services</td>
+            </tr>
+            <tr>
+                <td><strong>Investigation Complexity</strong></td>
+                <td>✓ Straightforward flows</td>
+                <td>✓ Complex, multi-hop investigations</td>
+            </tr>
+            <tr>
+                <td><strong>Code Analysis Frequency</strong></td>
+                <td>✓ Occasional code lookups</td>
+                <td>✓ Frequent deep code analysis</td>
+            </tr>
+            <tr>
+                <td><strong>Log Volume</strong></td>
+                <td>✓ Moderate (10-20 log entries/investigation)</td>
+                <td>✓ High (50+ log entries/investigation)</td>
+            </tr>
+            <tr>
+                <td><strong>Response Time Requirements</strong></td>
+                <td>✓ 10-30 seconds acceptable</td>
+                <td>✓ Need faster (parallel queries)</td>
+            </tr>
+            <tr>
+                <td><strong>Budget/Complexity Tolerance</strong></td>
+                <td>✓ Prefer simplicity</td>
+                <td>✓ Can handle complexity for better results</td>
+            </tr>
+        </table>
+
+        <h3>Implementation Recommendation</h3>
+
+        <div class="scenario">
+            <h4>Phased Approach</h4>
+            <p><strong>Phase 1 - MVP (Weeks 1-2):</strong> Start with Single Agent</p>
+            <ul>
+                <li>Prove the concept works</li>
+                <li>Build knowledge base</li>
+                <li>Get team comfortable with RCA agent</li>
+            </ul>
+            
+            <p><strong>Phase 2 - Growth (Weeks 3-4):</strong> Monitor Context Usage</p>
+            <ul>
+                <li>Track token usage per investigation</li>
+                <li>Identify when context becomes crowded (>30K tokens)</li>
+                <li>Note investigation types that need deep analysis</li>
+            </ul>
+            
+            <p><strong>Phase 3 - Scale (Month 2+):</strong> Migrate to Multi-Agent if needed</p>
+            <ul>
+                <li>If context regularly exceeds 35K tokens → multi-agent</li>
+                <li>If growing beyond 20 services → multi-agent</li>
+                <li>If investigations need parallel queries → multi-agent</li>
+            </ul>
+            
+            <p><strong>Architecture:</strong> Start simple, evolve based on actual needs, not predicted needs.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🚀 Key Takeaways</h2>
+        
+        <div class="example-box">
+            <h3>Why Context is Everything</h3>
+            <ol>
+                <li><strong>Without context:</strong> Agent does random log searches → finds noise → slow and inaccurate</li>
+                <li><strong>With context:</strong> Agent follows dependency chains → finds signal → fast and precise</li>
+            </ol>
+            
+            <h3>The Agent is Only as Good as Its Knowledge Base</h3>
+            <p>Garbage in = garbage out. High-quality knowledge base = high-quality RCA.</p>
+            
+            <h3>Knowledge Base Doesn't Need to Be Perfect on Day 1</h3>
+            <p>Start with basics (service dependencies, common errors) and let it evolve through learning loop.</p>
+            
+            <h3>Structure Enables Reasoning</h3>
+            <p>JSON logs + traceIDs + knowledge graph + code RAG = agent can connect the dots automatically.</p>
+            
+            <h3>Code Access Provides Definitive Answers</h3>
+            <p>RAG allows the agent to verify assumptions by reading actual implementation. No more guessing about validation rules or configurations.</p>
+            
+            <h3>Storage Strategy: Start Simple, Scale Smart</h3>
+            <p>File-based knowledge base (YAML + in-memory graph) works great for 10-50 services. Only move to graph database when you truly need it.</p>
+            
+            <h3>Multi-Service Debugging Requires System Thinking</h3>
+            <p>Agent needs to understand the "why" behind service interactions, not just the "what".</p>
+            
+            <h3>Context Window Management is Critical at Scale</h3>
+            <p>Single agent works for MVP. Multi-agent architecture becomes necessary when context exceeds 35K tokens or system has 20+ services.</p>
+            
+            <h3>Specialist Agents = Focused Expertise</h3>
+            <p>Instead of one agent trying to know everything, distribute knowledge: Log Intelligence, Code Analysis, Knowledge Graph specialists.</p>
+        </div>
+    </div>
+
+    <div class="container" style="background: #ecf0f1; text-align: center; padding: 40px;">
+        <h2>📚 Complete Architecture Overview</h2>
+        <p style="font-size: 18px; margin-bottom: 30px;">This guide now covers:</p>
+        
+        <div style="text-align: left; max-width: 800px; margin: 0 auto;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #3498db; margin-top: 0;">✓ Core Concepts</h3>
+                    <ul style="font-size: 16px;">
+                        <li>10-service architecture mapping</li>
+                        <li>Knowledge base structure (services, flows, patterns)</li>
+                        <li>JSON logging + traceID strategy</li>
+                        <li>Complete RCA workflow example</li>
+                    </ul>
+                </div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #e74c3c; margin-top: 0;">✓ Code Integration</h3>
+                    <ul style="font-size: 16px;">
+                        <li>RAG (Retrieval-Augmented Generation) pipeline</li>
+                        <li>Code indexing strategy</li>
+                        <li>When and how to query code</li>
+                        <li>Real example of code analysis in RCA</li>
+                    </ul>
+                </div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #27ae60; margin-top: 0;">✓ Storage Options</h3>
+                    <ul style="font-size: 16px;">
+                        <li>File-based (YAML + in-memory graph)</li>
+                        <li>Graph database (Neo4j/Neptune)</li>
+                        <li>Hybrid approach (recommended)</li>
+                        <li>Pros/cons comparison table</li>
+                    </ul>
+                </div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #9b59b6; margin-top: 0;">✓ Multi-Agent Architecture</h3>
+                    <ul style="font-size: 16px;">
+                        <li>Orchestrator + specialist agents design</li>
+                        <li>Context window optimization</li>
+                        <li>Token usage breakdown</li>
+                        <li>When to scale from single to multi-agent</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                <h3 style="margin-top: 0;">🎯 Implementation Path</h3>
+                <p style="font-size: 16px; margin-bottom: 15px;"><strong>Start Simple → Scale Smart</strong></p>
+                <ol style="font-size: 16px;">
+                    <li><strong>Phase 1:</strong> Single agent + file-based knowledge base + CloudWatch logs</li>
+                    <li><strong>Phase 2:</strong> Add log aggregation (Datadog) + code RAG</li>
+                    <li><strong>Phase 3:</strong> Migrate to multi-agent when context exceeds 35K tokens</li>
+                </ol>
+            </div>
+        </div>
+        
+        
+    </div>
+
+</body>
+</html>
