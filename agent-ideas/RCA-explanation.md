@@ -749,28 +749,25 @@ const handleSubmit = async (e) => {
 
 ### Final RCA Report
 
-```markdown
+---
+
 ## ROOT CAUSE ANALYSIS REPORT
 
-**Incident ID:** INC-2026-02-03-001
-**Detection Time:** 2026-02-03 14:23:45 UTC
-**Analysis Completed:** 2026-02-03 14:24:12 UTC (27 seconds)
+**Incident ID:** INC-2026-02-03-001  
+**Detection Time:** 2026-02-03 14:23:45 UTC  
+**Analysis Completed:** 2026-02-03 14:24:12 UTC (27 seconds)  
 **Asset ID:** ASSET_789 / ASSET_790
 
 ---
 
-### ROOT CAUSE
+#### ROOT CAUSE
 **Duplicate Content Ingestion - User Double-Click Submission**
 
-User `user_john` submitted the same content twice within 2 seconds 
-(14:15:00 and 14:15:02) by double-clicking the submit button. The 
-frontend lacks debouncing and button state management. The DB Interface 
-service does not perform idempotency checks, so both requests were 
-treated as unique ingestions despite having identical external_id values.
+User `user_john` submitted the same content twice within 2 seconds (14:15:00 and 14:15:02) by double-clicking the submit button. The frontend lacks debouncing and button state management. The DB Interface service does not perform idempotency checks, so both requests were treated as unique ingestions despite having identical external_id values.
 
 ---
 
-### TIMELINE OF EVENTS
+#### TIMELINE OF EVENTS
 
 | Timestamp | Event | Service | TraceID |
 |-----------|-------|---------|---------|
@@ -784,18 +781,17 @@ treated as unique ingestions despite having identical external_id values.
 
 ---
 
-### EVIDENCE
+#### EVIDENCE
 
 1. **DynamoDB Records:** Two records with identical payloads but different asset_ids
 2. **API Gateway Logs:** Two POST requests from user_john (IP: 192.168.1.100) 2s apart
 3. **No Retry Headers:** Requests are independent, not retries
-4. **Code Analysis (Backend):** DB Interface validation has TODO comment confirming 
-   missing uniqueness check - only validates presence
+4. **Code Analysis (Backend):** DB Interface validation has TODO comment confirming missing uniqueness check - only validates presence
 5. **Code Analysis (Frontend):** Submit button lacks debouncing and disabled state
 
 ---
 
-### IMMEDIATE REMEDIATION
+#### IMMEDIATE REMEDIATION
 
 1. Delete orphaned record ASSET_790 from DynamoDB
 2. Verify ASSET_789 is in normalized tables with external_id: EXT_456
@@ -803,14 +799,13 @@ treated as unique ingestions despite having identical external_id values.
 
 ---
 
-### PERMANENT FIX RECOMMENDATIONS
+#### PERMANENT FIX RECOMMENDATIONS
 
 **High Priority (Prevent recurrence):**
 1. **Frontend:** Add debouncing (300ms) and disable submit button during API calls
    - Owner: Frontend Team | Effort: 1 hour
    
-2. **DB Interface:** Implement idempotency check - query DynamoDB for existing 
-   external_id before creating new asset
+2. **DB Interface:** Implement idempotency check - query DynamoDB for existing external_id before creating new asset
    - Owner: Backend Team | Effort: 4 hours
 
 **Medium Priority (Defense in depth):**
@@ -822,18 +817,18 @@ treated as unique ingestions despite having identical external_id values.
 
 ---
 
-### SERVICES INVOLVED
-API Gateway → DB Interface → Content Validator → DynamoDB → SQS → 
-Content Processor → Normalized DB
+#### SERVICES INVOLVED
+API Gateway → DB Interface → Content Validator → DynamoDB → SQS → Content Processor → Normalized DB
 
-### RELATED TRACES
+#### RELATED TRACES
 - trace-abc-123 (successful ingestion)
 - trace-def-456 (failed duplicate ingestion)
 
-### LEARNING RECORDED
-✅ Pattern added to error library: "Duplicate external_id ingestion via rapid clicks"
-✅ Knowledge base updated with mitigation strategies
-```
+#### LEARNING RECORDED
+- ✅ Pattern added to error library: "Duplicate external_id ingestion via rapid clicks"
+- ✅ Knowledge base updated with mitigation strategies
+
+---
 
 ---
 
