@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATV+ Prototype - Explainable AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: #141414;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 68px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4%;
+            z-index: 1000;
+            transition: background 0.3s ease;
+        }
+
+        .header.scrolled {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #e50914;
+            letter-spacing: -1px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .mode-selector {
+            position: relative;
+        }
+
+        .mode-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-dropdown {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: rgba(30, 30, 30, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            min-width: 320px;
+            padding: 12px 0;
+            display: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .mode-dropdown.active {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mode-option {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-option.active {
+            background: rgba(229, 9, 20, 0.2);
+            color: #e50914;
+        }
+
+        .mode-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .mode-label {
+            font-size: 13px;
+            color: #999;
+            padding: 12px 20px 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 85vh;
+            background: linear-gradient(0deg, #141414 0%, transparent 50%), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><rect fill="%23222" width="1920" height="1080"/><text x="50%" y="45%" font-family="Arial" font-size="120" fill="%23444" text-anchor="middle">HERO BANNER</text><text x="50%" y="55%" font-family="Arial" font-size="40" fill="%23555" text-anchor="middle">Featured Content</text></svg>') center/cover;
+            display: flex;
+            align-items: flex-end;
+            padding: 0 4% 80px;
+            margin-bottom: 40px;
+        }
+
+        .hero-content {
+            max-width: 500px;
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.1;
+        }
+
+        .hero-desc {
+            font-size: 18px;
+            color: #ddd;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .btn-secondary {
+            background: rgba(109, 109, 110, 0.7);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(109, 109, 110, 0.4);
+        }
+
+        /* Content Rows */
+        .content-rows {
+            padding: 0 4%;
+        }
+
+        .row {
+            margin-bottom: 60px;
+        }
+
+        .row-header {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .row-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .row-subtitle {
+            font-size: 14px;
+            color: #999;
+            font-weight: 400;
+        }
+
+        .tiles-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding-bottom: 20px;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+        }
+
+        .tiles-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tile {
+            position: relative;
+            min-width: 280px;
+            height: 158px;
+            border-radius: 6px;
+            background: #2a2a2a;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        box-shadow 0.3s ease,
+                        z-index 0s 0.15s;
+            overflow: visible;
+        }
+
+        .tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        box-shadow 0.3s ease,
+                        z-index 0s;
+        }
+
+        .tile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* AI Badge */
+        .ai-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(229, 9, 20, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+
+        .tile:hover .ai-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .sparkle {
+            display: inline-block;
+            animation: sparkle 2s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        /* Match Ring */
+        .match-ring {
+            position: absolute;
+            inset: -3px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .tile:hover .match-ring {
+            opacity: 1;
+            animation: ringPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+
+        .ring-high {
+            border: 3px solid #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+        }
+
+        .ring-medium {
+            border: 3px solid #f59e0b;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+        }
+
+        .ring-low {
+            border: 3px solid #6b7280;
+            box-shadow: 0 0 12px rgba(107, 114, 128, 0.3);
+        }
+
+        /* Match Percentage */
+        .match-percentage {
+            position: absolute;
+            bottom: -30px;
+            left: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.3s ease 0.2s;
+            color: #10b981;
+        }
+
+        .tile:hover .match-percentage {
+            opacity: 1;
+        }
+
+        .match-percentage.medium {
+            color: #f59e0b;
+        }
+
+        .match-percentage.low {
+            color: #9ca3af;
+        }
+
+        /* Icon Badges */
+        .icon-badges {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            display: flex;
+            gap: 6px;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: all 0.3s ease 0.3s;
+        }
+
+        .tile:hover .icon-badges {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .badge-icon {
+            width: 28px;
+            height: 28px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Reason Peek Bar */
+        .reason-peek {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 100%);
+            padding: 12px;
+            border-radius: 0 0 6px 6px;
+            font-size: 12px;
+            line-height: 1.4;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease 0.5s;
+            backdrop-filter: blur(10px);
+        }
+
+        .tile:hover .reason-peek {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Info Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            color: #e50914;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-match {
+            font-size: 48px;
+            font-weight: 700;
+            color: #10b981;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .modal-reasons {
+            margin-bottom: 24px;
+        }
+
+        .modal-reasons h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: #ddd;
+        }
+
+        .reason-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #bbb;
+        }
+
+        .reason-bullet {
+            color: #e50914;
+            font-weight: 700;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .modal-feedback {
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-feedback span {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .feedback-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+        .feedback-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        /* Instructions Panel */
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 300px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #bbb;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .instructions h4 {
+            color: #fff;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .instructions li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #e50914;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 32px;
+            }
+            
+            .tile {
+                min-width: 200px;
+                height: 113px;
+            }
+            
+            .instructions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header" id="header">
+        <div class="logo">ATV+</div>
+        <div class="controls">
+            <div class="mode-selector">
+                <button class="mode-btn" id="modeBtn">
+                    <span>⚙️</span>
+                    <span>AI Explanation Mode</span>
+                    <span style="font-size: 12px;">▼</span>
+                </button>
+                <div class="mode-dropdown" id="modeDropdown">
+                    <div class="mode-label">Primary Layer</div>
+                    <div class="mode-option">
+                        <input type="checkbox" id="rowHeaders" checked>
+                        <label for="rowHeaders">Dynamic Row Headers</label>
+                    </div>
+                    
+                    <div class="mode-label">Secondary Layer (On Focus)</div>
+                    <div class="mode-option">
+                        <input type="checkbox" id="coloredRings" checked>
+                        <label for="coloredRings">Colored Confidence Rings</label>
+                    </div>
+                    <div class="mode-option">
+                        <input type="checkbox" id="matchPercentage" checked>
+                        <label for="matchPercentage">Match Percentage</label>
+                    </div>
+                    <div class="mode-option">
+                        <input type="checkbox" id="iconBadges" checked>
+                        <label for="iconBadges">Smart Icon Badges</label>
+                    </div>
+                    <div class="mode-option">
+                        <input type="checkbox" id="reasonPeek" checked>
+                        <label for="reasonPeek">Reason Peek Bar</label>
+                    </div>
+                    
+                    <div class="mode-label">Supporting Features</div>
+                    <div class="mode-option">
+                        <input type="checkbox" id="aiSparkle" checked>
+                        <label for="aiSparkle">AI Sparkle Badge</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Mission: Impossible – Fallout</h1>
+            <p class="hero-desc">Ethan Hunt and his IMF team race against time after a mission gone wrong, featuring the most dangerous stunts ever filmed.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary">
+                    <span>▶</span>
+                    <span>Play</span>
+                </button>
+                <button class="btn btn-secondary">
+                    <span>ℹ</span>
+                    <span>More Info</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Rows -->
+    <div class="content-rows">
+        <!-- AI Search Results Row -->
+        <div class="row">
+            <div class="row-header">
+                <div class="row-title">AI Search Results for "Tom Cruise jumps from a building"</div>
+                <div class="row-subtitle" id="searchSubtitle">Showing: High-stakes action with building stunts</div>
+            </div>
+            <div class="tiles-container">
+                <!-- Tile 1 -->
+                <div class="tile" data-match="95" data-type="high" onclick="openModal(this)">
+                    <div class="match-ring ring-high"></div>
+                    <div class="ai-badge" id="aiBadge1">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges" id="iconBadges1">
+                        <div class="badge-icon">👤</div>
+                        <div class="badge-icon">🏢</div>
+                    </div>
+                    <div class="tile-image">Mission: Impossible – Fallout</div>
+                    <div class="match-percentage" id="matchPerc1">95% Match</div>
+                    <div class="reason-peek" id="reasonPeek1">Exact match: Burj Khalifa jump scene at 1:23:45</div>
+                </div>
+
+                <!-- Tile 2 -->
+                <div class="tile" data-match="87" data-type="medium" onclick="openModal(this)">
+                    <div class="match-ring ring-medium"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">👤</div>
+                        <div class="badge-icon">🎬</div>
+                    </div>
+                    <div class="tile-image">Edge of Tomorrow</div>
+                    <div class="match-percentage medium">87% Match</div>
+                    <div class="reason-peek">Tom Cruise in high-stakes action sequences</div>
+                </div>
+
+                <!-- Tile 3 -->
+                <div class="tile" data-match="82" data-type="medium" onclick="openModal(this)">
+                    <div class="match-ring ring-medium"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">🏢</div>
+                        <div class="badge-icon">🎯</div>
+                    </div>
+                    <div class="tile-image">Skyscraper</div>
+                    <div class="match-percentage medium">82% Match</div>
+                    <div class="reason-peek">Features intense building-top action sequences</div>
+                </div>
+
+                <!-- Tile 4 -->
+                <div class="tile" data-match="78" data-type="medium" onclick="openModal(this)">
+                    <div class="match-ring ring-medium"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">👤</div>
+                        <div class="badge-icon">⭐</div>
+                    </div>
+                    <div class="tile-image">Jack Reacher</div>
+                    <div class="match-percentage medium">78% Match</div>
+                    <div class="reason-peek">Tom Cruise action thriller, high ratings</div>
+                </div>
+
+                <!-- Tile 5 -->
+                <div class="tile" data-match="65" data-type="low" onclick="openModal(this)">
+                    <div class="match-ring ring-low"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">🎬</div>
+                    </div>
+                    <div class="tile-image">The Dark Knight</div>
+                    <div class="match-percentage low">65% Match</div>
+                    <div class="reason-peek">Action thriller with iconic building scenes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Recommendation Row -->
+        <div class="row">
+            <div class="row-header">
+                <div class="row-title">Because you love impossible stunts — Tom Cruise edition</div>
+                <div class="row-subtitle" id="recSubtitle">Personalized recommendations based on your viewing history</div>
+            </div>
+            <div class="tiles-container">
+                <div class="tile" data-match="92" data-type="high" onclick="openModal(this)">
+                    <div class="match-ring ring-high"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">👤</div>
+                        <div class="badge-icon">🎬</div>
+                    </div>
+                    <div class="tile-image">Top Gun: Maverick</div>
+                    <div class="match-percentage">92% Match</div>
+                    <div class="reason-peek">You watched Mission: Impossible - Rogue Nation last week</div>
+                </div>
+
+                <div class="tile" data-match="88" data-type="medium" onclick="openModal(this)">
+                    <div class="match-ring ring-medium"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">👤</div>
+                        <div class="badge-icon">⭐</div>
+                    </div>
+                    <div class="tile-image">Oblivion</div>
+                    <div class="match-percentage medium">88% Match</div>
+                    <div class="reason-peek">Tom Cruise sci-fi thriller, highly rated</div>
+                </div>
+
+                <div class="tile" data-match="85" data-type="medium" onclick="openModal(this)">
+                    <div class="match-ring ring-medium"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">🎬</div>
+                        <div class="badge-icon">🎯</div>
+                    </div>
+                    <div class="tile-image">The Bourne Ultimatum</div>
+                    <div class="match-percentage medium">85% Match</div>
+                    <div class="reason-peek">Similar high-octane action and stunts</div>
+                </div>
+
+                <div class="tile" data-match="83" data-type="medium" onclick="openModal(this)">
+                    <div class="match-ring ring-medium"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">🎬</div>
+                    </div>
+                    <div class="tile-image">John Wick: Chapter 3</div>
+                    <div class="match-percentage medium">83% Match</div>
+                    <div class="reason-peek">Matches your preference for practical stunts</div>
+                </div>
+
+                <div class="tile" data-match="79" data-type="medium" onclick="openModal(this)">
+                    <div class="match-ring ring-medium"></div>
+                    <div class="ai-badge">
+                        <span class="sparkle">✦</span>
+                        <span>AI</span>
+                    </div>
+                    <div class="icon-badges">
+                        <div class="badge-icon">⭐</div>
+                    </div>
+                    <div class="tile-image">Casino Royale</div>
+                    <div class="match-percentage medium">79% Match</div>
+                    <div class="reason-peek">Trending in action thriller category</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regular Row (Non-AI) -->
+        <div class="row">
+            <div class="row-header">
+                <div class="row-title">Trending Now</div>
+            </div>
+            <div class="tiles-container">
+                <div class="tile">
+                    <div class="tile-image">Trending Movie 1</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-image">Trending Movie 2</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-image">Trending Movie 3</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-image">Trending Movie 4</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-image">Trending Movie 5</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="sparkle">✦</span>
+                <span>AI Match Explanation</span>
+            </div>
+            <div class="modal-match" id="modalMatch">95% Match</div>
+            <div class="modal-reasons">
+                <h3>This was recommended because:</h3>
+                <div class="reason-item">
+                    <span class="reason-bullet">•</span>
+                    <span id="reason1">Tom Cruise stars in this film</span>
+                </div>
+                <div class="reason-item">
+                    <span class="reason-bullet">•</span>
+                    <span id="reason2">Features iconic building jump scene (Burj Khalifa, Dubai)</span>
+                </div>
+                <div class="reason-item">
+                    <span class="reason-bullet">•</span>
+                    <span id="reason3">You watched Mission: Impossible - Rogue Nation last month</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" style="flex: 1;">▶ Play Movie</button>
+                <button class="btn btn-secondary" onclick="closeModal()">✕ Close</button>
+            </div>
+            <div class="modal-feedback">
+                <span>Was this helpful?</span>
+                <div class="feedback-buttons">
+                    <button class="feedback-btn" onclick="giveFeedback('up')">👍</button>
+                    <button class="feedback-btn" onclick="giveFeedback('down')">👎</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h4>Try it out:</h4>
+        <ul>
+            <li>Hover over tiles to see AI explanations</li>
+            <li>Click tiles for detailed info modal</li>
+            <li>Toggle features in header dropdown</li>
+            <li>Notice row headers with AI context</li>
+        </ul>
+    </div>
+
+    <script>
+        // Dropdown Toggle
+        const modeBtn = document.getElementById('modeBtn');
+        const modeDropdown = document.getElementById('modeDropdown');
+
+        modeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modeDropdown.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!modeDropdown.contains(e.target) && e.target !== modeBtn) {
+                modeDropdown.classList.remove('active');
+            }
+        });
+
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Feature Toggles
+        document.getElementById('rowHeaders').addEventListener('change', function() {
+            const subtitles = document.querySelectorAll('.row-subtitle');
+            subtitles.forEach(sub => {
+                sub.style.display = this.checked ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('coloredRings').addEventListener('change', function() {
+            const rings = document.querySelectorAll('.match-ring');
+            rings.forEach(ring => {
+                ring.style.display = this.checked ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('matchPercentage').addEventListener('change', function() {
+            const percentages = document.querySelectorAll('.match-percentage');
+            percentages.forEach(perc => {
+                perc.style.display = this.checked ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('iconBadges').addEventListener('change', function() {
+            const badges = document.querySelectorAll('.icon-badges');
+            badges.forEach(badge => {
+                badge.style.display = this.checked ? 'flex' : 'none';
+            });
+        });
+
+        document.getElementById('reasonPeek').addEventListener('change', function() {
+            const peeks = document.querySelectorAll('.reason-peek');
+            peeks.forEach(peek => {
+                peek.style.display = this.checked ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('aiSparkle').addEventListener('change', function() {
+            const badges = document.querySelectorAll('.ai-badge');
+            badges.forEach(badge => {
+                badge.style.display = this.checked ? 'flex' : 'none';
+            });
+        });
+
+        // Modal Functions
+        function openModal(tile) {
+            const match = tile.getAttribute('data-match');
+            const type = tile.getAttribute('data-type');
+            const modal = document.getElementById('modalOverlay');
+            const modalMatch = document.getElementById('modalMatch');
+            
+            modalMatch.textContent = match + '% Match';
+            modalMatch.style.color = type === 'high' ? '#10b981' : type === 'medium' ? '#f59e0b' : '#9ca3af';
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modalOverlay');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function giveFeedback(type) {
+            alert(`Feedback recorded: ${type === 'up' ? '👍 Helpful' : '👎 Not helpful'}`);
+            closeModal();
+        }
+
+        // Close modal on overlay click
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('modalOverlay');
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
