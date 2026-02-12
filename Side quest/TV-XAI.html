@@ -269,6 +269,160 @@
                         z-index 0s;
         }
 
+        /* Hover Carousel Mode */
+        .tile.carousel-mode {
+            min-width: 280px;
+            overflow: hidden;
+        }
+
+        .tile.carousel-mode:hover {
+            transform: scale(1.05);
+            min-width: 450px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tile.carousel-mode .tile-image {
+            width: 100%;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tile.carousel-mode:hover .tile-image {
+            width: 62%;
+        }
+
+        .carousel-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 38%;
+            background: linear-gradient(90deg, rgba(15, 15, 15, 0.98) 0%, rgba(20, 20, 20, 1) 100%);
+            backdrop-filter: blur(10px);
+            padding: 12px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .tile.carousel-mode:hover .carousel-panel {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .carousel-match {
+            font-size: 28px;
+            font-weight: 700;
+            color: #10b981;
+            text-align: center;
+            margin-bottom: 2px;
+            line-height: 1;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tile.carousel-mode:hover .carousel-match {
+            animation: fadeInUp 0.4s ease 0.2s forwards;
+        }
+
+        .carousel-match.medium {
+            color: #f59e0b;
+        }
+
+        .carousel-match.low {
+            color: #9ca3af;
+        }
+
+        .carousel-reasons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 10px;
+            line-height: 1.3;
+            color: #ddd;
+            overflow: hidden;
+        }
+
+        .carousel-reason {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            animation: fadeInUp 0.4s ease forwards;
+            align-items: flex-start;
+        }
+
+        .tile.carousel-mode:hover .carousel-reason:nth-child(1) {
+            animation-delay: 0.3s;
+        }
+
+        .tile.carousel-mode:hover .carousel-reason:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .tile.carousel-mode:hover .carousel-reason:nth-child(3) {
+            animation-delay: 0.5s;
+        }
+
+        .carousel-bullet {
+            color: #e50914;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .carousel-feedback {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 4px;
+            opacity: 0;
+            animation: fadeInUp 0.4s ease 0.6s forwards;
+        }
+
+        .tile.carousel-mode:hover .carousel-feedback {
+            animation: fadeInUp 0.4s ease 0.6s forwards;
+        }
+
+        .carousel-feedback-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .carousel-feedback-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.15);
+        }
+
+        .carousel-feedback-btn:active {
+            transform: scale(0.95);
+        }
+
         .tile-image {
             width: 100%;
             height: 100%;
@@ -658,6 +812,12 @@
                         <input type="checkbox" id="aiSparkle" checked>
                         <label for="aiSparkle">AI Sparkle Badge</label>
                     </div>
+                    
+                    <div class="mode-label">Experimental Features</div>
+                    <div class="mode-option">
+                        <input type="checkbox" id="hoverCarousel">
+                        <label for="hoverCarousel">Hover Carousel with Reasons</label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -704,6 +864,29 @@
                     <div class="tile-image">Mission: Impossible – Fallout</div>
                     <div class="match-percentage" id="matchPerc1">95% Match</div>
                     <div class="reason-peek" id="reasonPeek1">Exact match: Burj Khalifa jump scene at 1:23:45</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match">95%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Tom Cruise stars in this film</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Iconic Burj Khalifa jump scene</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Matches your action preferences</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Tile 2 -->
@@ -720,6 +903,29 @@
                     <div class="tile-image">Edge of Tomorrow</div>
                     <div class="match-percentage medium">87% Match</div>
                     <div class="reason-peek">Tom Cruise in high-stakes action sequences</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match medium">87%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Tom Cruise action thriller</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>High-stakes sci-fi sequences</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Similar intensity to your search</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Tile 3 -->
@@ -736,6 +942,29 @@
                     <div class="tile-image">Skyscraper</div>
                     <div class="match-percentage medium">82% Match</div>
                     <div class="reason-peek">Features intense building-top action sequences</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match medium">82%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>High-rise building action</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Intense stunt sequences</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Matches building stunt theme</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Tile 4 -->
@@ -752,6 +981,29 @@
                     <div class="tile-image">Jack Reacher</div>
                     <div class="match-percentage medium">78% Match</div>
                     <div class="reason-peek">Tom Cruise action thriller, high ratings</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match medium">78%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Tom Cruise action role</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Highly rated thriller</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Similar action intensity</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Tile 5 -->
@@ -767,6 +1019,29 @@
                     <div class="tile-image">The Dark Knight</div>
                     <div class="match-percentage low">65% Match</div>
                     <div class="reason-peek">Action thriller with iconic building scenes</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match low">65%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Iconic building sequences</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Action thriller genre</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>High-stakes narrative</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -791,6 +1066,29 @@
                     <div class="tile-image">Top Gun: Maverick</div>
                     <div class="match-percentage">92% Match</div>
                     <div class="reason-peek">You watched Mission: Impossible - Rogue Nation last week</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match">92%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>You watched MI: Rogue Nation</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Tom Cruise high-stakes action</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Trending in your region</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="tile" data-match="88" data-type="medium" onclick="openModal(this)">
@@ -806,6 +1104,29 @@
                     <div class="tile-image">Oblivion</div>
                     <div class="match-percentage medium">88% Match</div>
                     <div class="reason-peek">Tom Cruise sci-fi thriller, highly rated</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match medium">88%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Tom Cruise lead role</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Highly rated sci-fi thriller</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Matches your genre preferences</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="tile" data-match="85" data-type="medium" onclick="openModal(this)">
@@ -821,6 +1142,29 @@
                     <div class="tile-image">The Bourne Ultimatum</div>
                     <div class="match-percentage medium">85% Match</div>
                     <div class="reason-peek">Similar high-octane action and stunts</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match medium">85%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>High-octane action sequences</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Similar stunt choreography</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Matches your viewing history</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="tile" data-match="83" data-type="medium" onclick="openModal(this)">
@@ -835,6 +1179,29 @@
                     <div class="tile-image">John Wick: Chapter 3</div>
                     <div class="match-percentage medium">83% Match</div>
                     <div class="reason-peek">Matches your preference for practical stunts</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match medium">83%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Practical stunt work</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Intense action choreography</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Popular with similar viewers</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="tile" data-match="79" data-type="medium" onclick="openModal(this)">
@@ -849,6 +1216,29 @@
                     <div class="tile-image">Casino Royale</div>
                     <div class="match-percentage medium">79% Match</div>
                     <div class="reason-peek">Trending in action thriller category</div>
+                    
+                    <!-- Carousel Panel -->
+                    <div class="carousel-panel">
+                        <div class="carousel-match medium">79%</div>
+                        <div class="carousel-reasons">
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Trending in action category</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>High-stakes thriller sequences</span>
+                            </div>
+                            <div class="carousel-reason">
+                                <span class="carousel-bullet">•</span>
+                                <span>Similar tone and pacing</span>
+                            </div>
+                        </div>
+                        <div class="carousel-feedback">
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('up')">👍</button>
+                            <button class="carousel-feedback-btn" onclick="event.stopPropagation(); giveFeedback('down')">👎</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -920,6 +1310,7 @@
         <h4>Try it out:</h4>
         <ul>
             <li>Hover over tiles to see AI explanations</li>
+            <li>Enable "Hover Carousel" for slide reveal</li>
             <li>Click tiles for detailed info modal</li>
             <li>Toggle features in header dropdown</li>
             <li>Notice row headers with AI context</li>
@@ -992,6 +1383,18 @@
             const badges = document.querySelectorAll('.ai-badge');
             badges.forEach(badge => {
                 badge.style.display = this.checked ? 'flex' : 'none';
+            });
+        });
+
+        // Hover Carousel Toggle
+        document.getElementById('hoverCarousel').addEventListener('change', function() {
+            const tiles = document.querySelectorAll('.tile');
+            tiles.forEach(tile => {
+                if (this.checked) {
+                    tile.classList.add('carousel-mode');
+                } else {
+                    tile.classList.remove('carousel-mode');
+                }
             });
         });
 
