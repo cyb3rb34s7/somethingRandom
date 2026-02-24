@@ -1,0 +1,36 @@
+{
+  "title": "AI Picture Enhancement",
+  "message": "Easily adjust picture and sound settings. Enjoy an enhanced experience tailored to your environment, content type and preferences.",
+  "images": [
+    {
+      "drawable": "sample_image_1",
+      "label": "Standard",
+      "enhanced": false
+    },
+    {
+      "drawable": "sample_image_2",
+      "label": "Vivid",
+      "enhanced": true
+    },
+    {
+      "drawable": "sample_image_3",
+      "label": "Cinema",
+      "enhanced": true
+    },
+    {
+      "drawable": "sample_image_4",
+      "label": "Sport",
+      "enhanced": false
+    }
+  ],
+  "buttons": [
+    {
+      "text": "Apply",
+      "action": "apply"
+    },
+    {
+      "text": "Cancel",
+      "action": "dismiss"
+    }
+  ]
+}

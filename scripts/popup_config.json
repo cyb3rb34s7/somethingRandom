@@ -1,0 +1,26 @@
+{
+  "title": null,
+  "message": "Easily adjust picture and sound settings. Enjoy an enhanced experience tailored to your environment, content type and preferences.",
+  "images": [
+    {
+      "drawable": "sample_image_1",
+      "label": "OFF",
+      "enhanced": false
+    },
+    {
+      "drawable": "sample_image_2",
+      "label": "ON",
+      "enhanced": true
+    }
+  ],
+  "buttons": [
+    {
+      "text": "Open Setting",
+      "action": "open_setting"
+    },
+    {
+      "text": "Close",
+      "action": "dismiss"
+    }
+  ]
+}
