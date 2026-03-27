@@ -1,216 +1,638 @@
-Let me re-read the exact update query and payload structure one final time to be precise.Good. Now I have everything I need. Here is the exact, final plan — nothing more, nothing less.
+You're absolutely right. Semaphore is overcomplicating it. If the thread pool core size is 5, at most 5 tasks run at a time naturally — no semaphore needed. Let me read the current config one more time to make sure I get the thread pool change right.Good. Now here's the complete, final, detailed plan with all code changes.
 
 ---
 
-## Final Plan — Exact Changes Required
+## Complete Implementation Plan — Final Version
 
 ---
 
-### 1. New DTO — `DeeplinkUpdateDto`
+### 1. `ThreadPoolConfig.java`
 
-New file. Fields:
-- `contentId` — the show or season ID
-- `countryCode`
-- `providerId`
-- `currentDeeplinkId` — what's currently stored in `DEEPLINK_ID` column (fetched from DB, used for comparison)
-- `newDeeplinkId` — the correct first available episode ID (computed, used for update)
-- `deeplinkPayload` — the JSON string built in Java (used for update)
+Change `corePoolSize` from 20 to 5, `maxPoolSize` from 50 to 5. This means at most 5 partitions ever run concurrently. No semaphore, no extra logic — the thread pool itself is the throttle.
 
----
-
-### 2. `LicenseWindowDto` — Add 2 fields
-
-Add `currentAvailableStarting` and `currentAvailableEnding`. These carry the currently stored window values so Java can compare after computing the new window and skip assets where nothing changed.
-
----
-
-### 3. `SlotBatchMapper.xml` — Changes to existing queries + new queries
-
-**Change 1 — `findAssetWithMultipleSlots`**
-
-Add `VOD.AVAILABLE_STARTING as currentAvailableStarting` and `VOD.EXP_DATE as currentAvailableEnding` to SELECT. Both columns already exist on the `VOD` join — no new join. Add them to `GROUP BY`. Return type changes from `String` to `LicenseWindowDto`.
-
-**Change 2 — `findAssetByType`**
-
-Add `VOD.AVAILABLE_STARTING as currentAvailableStarting` and `VOD.EXP_DATE as currentAvailableEnding` to SELECT. Already on the same table being queried. Return type changes from `String` to `LicenseWindowDto`.
-
-**New Query 1 — `findShowsForDeeplinkSync`**
-
-```sql
-SELECT
-  VOD.CONTENT_ID      as contentId,
-  VOD.CNTY_CD         as countryCode,
-  VOD.VC_CP_ID        as providerId,
-  VOD.DEEPLINK_ID     as currentDeeplinkId
-FROM ITVSTD_O.STD_VC_VOD_CONTENT VOD
-JOIN ITVSTD_O.STD_VC_VOD_CP CP
-  ON VOD.CNTY_CD = CP.COUNTRY_CD AND VOD.VC_CP_ID = CP.VC_CP_ID
-WHERE VOD."TYPE" = 'SHOW'
-  AND UPPER(VOD.FEED_WORKER) IN (...)
-  AND CP."GROUP" = #{countryGroup}
+```java
+executor.setCorePoolSize(5);
+executor.setMaxPoolSize(5);
 ```
 
-Returns `List<DeeplinkUpdateDto>`.
+---
 
-**New Query 2 — `findSeasonsForDeeplinkSync`**
+### 2. `application.properties`
 
-Identical to above but `VOD."TYPE" = 'SEASON'`. Returns `List<DeeplinkUpdateDto>`.
-
-**New Query 3 — `findFirstEpisodeForShows`**
-
-Batched version of `getDeeplinkId` from VOD importer. For each showId in the list, fetch the first available episode ordered by `SEASON_NO, EPISODE_NO`. Returns `(showId, episodeContentId, episodeRatings)`.
-
-```sql
-SELECT
-  A.SHOW_ID     as contentId,
-  A.CONTENT_ID  as newDeeplinkId,
-  A.RATINGS     as ratings
-FROM ITVSTD_O.STD_VC_VOD_CONTENT A
-WHERE A.CNTY_CD = #{countryCode}
-  AND LOWER(A.TYPE) = 'episode'
-  AND A.SHOW_ID IN (...)
-  AND A.ROWID IN (
-    SELECT FIRST_VALUE(ROWID) OVER (
-      PARTITION BY SHOW_ID
-      ORDER BY SEASON_NO, EPISODE_NO
-    )
-    FROM ITVSTD_O.STD_VC_VOD_CONTENT
-    WHERE SHOW_ID IN (...)
-      AND CNTY_CD = #{countryCode}
-      AND LOWER(TYPE) = 'episode'
-  )
+```properties
+# FROM:
+spring.datasource.hikari.maxLifetime=2000000
+# TO:
+spring.datasource.hikari.maxLifetime=600000
 ```
 
-Returns `List<DeeplinkUpdateDto>` with `contentId=showId`, `newDeeplinkId=episodeContentId`, and a separate `ratings` field on the DTO.
+---
 
-**New Query 4 — `findFirstEpisodeForSeasons`**
+### 3. `LicenseWindowDto.java`
 
-Same pattern but `PARTITION BY SEASON_ID ORDER BY EPISODE_NO`. Returns `contentId=seasonId`, `newDeeplinkId=episodeContentId`, `ratings`.
+Add two fields. Everything else stays exactly as-is.
 
-**New Query 5 — `updateDeeplinks`** (for `STD_VC_VOD_CONTENT`)
+```java
+private String currentAvailableStarting;
+private String currentAvailableEnding;
+```
 
-```sql
-<foreach collection="assets" item="asset" open="begin " close=";end;" separator=";">
-  UPDATE ITVSTD_O.STD_VC_VOD_CONTENT
-  SET
-    DEEPLINK_ID      = #{asset.newDeeplinkId, jdbcType=VARCHAR},
-    DEEPLINK_PAYLOAD = #{asset.deeplinkPayload, jdbcType=VARCHAR}
+---
+
+### 4. New file — `DeeplinkPayloadDto.java`
+
+Create inside `cms-slot-updater` at `model/DeeplinkPayloadDto.java`. Four fields only — no `event`, no `event_info`.
+
+```java
+@Builder
+@Getter
+@Setter
+@JsonInclude(Include.NON_NULL)
+public class DeeplinkPayloadDto {
+
+    @JsonProperty("content_type")
+    private String contentType;
+
+    @JsonProperty("content_id")
+    private String contentId;
+
+    @JsonProperty("series_id")
+    private String seriesId;
+
+    @JsonProperty("ratings")
+    private String ratings;
+}
+```
+
+---
+
+### 5. New file — `DeeplinkUpdateDto.java`
+
+```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class DeeplinkUpdateDto {
+    private String contentId;         // SHOW or SEASON content ID
+    private String countryCode;
+    private String providerId;
+    private String currentDeeplinkId; // currently stored DEEPLINK_ID
+    private String newDeeplinkId;     // correct first available episode ID
+    private String ratings;           // ratings of the new episode
+    private String deeplinkPayload;   // built JSON string, set in Java before update
+}
+```
+
+---
+
+### 6. `SlotBatchMapper.xml` — All query changes
+
+#### 6.1 Modify `findAssetWithMultipleSlots`
+
+Add `VOD.AVAILABLE_STARTING` and `VOD.EXP_DATE` to SELECT and GROUP BY. Both already available from existing `VOD` join — no new join. Return type changes to `LicenseWindowDto`.
+
+```xml
+<select id="findAssetWithMultipleSlots"
+    resultType="com.cms.slotupdater.batchprocessor.model.LicenseWindowDto"
+    parameterType="map">
+  SELECT
+    SLOT.PROGRAM_ID                as contentId,
+    VOD.AVAILABLE_STARTING         as currentAvailableStarting,
+    VOD.EXP_DATE                   as currentAvailableEnding
+  FROM
+    ITVSTD_O.STD_CMS_VOD_ASSET_LICENSE SLOT
+  JOIN
+    ITVSTD_O.STD_VC_VOD_CONTENT VOD ON SLOT.PROGRAM_ID = VOD.CONTENT_ID
+  JOIN
+    ITVSTD_O.STD_VC_VOD_CP CP
+    ON VOD.CNTY_CD = CP.COUNTRY_CD AND VOD.VC_CP_ID = CP.VC_CP_ID
   WHERE
-    CONTENT_ID = #{asset.contentId, jdbcType=VARCHAR}
-    AND CNTY_CD = #{asset.countryCode, jdbcType=VARCHAR}
-    AND VC_CP_ID = #{asset.providerId, jdbcType=VARCHAR}
-</foreach>
+    UPPER(SLOT.FEED_WORKER) IN
+      <foreach collection="feedWorkers" item="item" open="(" separator="," close=")">
+        UPPER(#{item})
+      </foreach>
+    AND VOD."TYPE" NOT IN ('SEASON', 'SHOW')
+    AND CP."GROUP" = #{countryGroup}
+  GROUP BY
+    SLOT.PROGRAM_ID,
+    VOD.AVAILABLE_STARTING,
+    VOD.EXP_DATE
+  HAVING COUNT(SLOT.PROGRAM_ID) > 1
+</select>
 ```
 
-**New Query 6 — `updateDeeplinksCP`** (for `STD_CMS_VOD_CP_CONTENT`)
+#### 6.2 Modify `findAssetByType`
 
-Identical but targets `STD_CMS_VOD_CP_CONTENT`. Same `BEGIN...END` foreach pattern.
+Add same two columns. Already on the same table being queried.
+
+```xml
+<select id="findAssetByType"
+    resultType="com.cms.slotupdater.batchprocessor.model.LicenseWindowDto"
+    parameterType="map">
+  SELECT
+    VOD.CONTENT_ID             as contentId,
+    VOD.AVAILABLE_STARTING     as currentAvailableStarting,
+    VOD.EXP_DATE               as currentAvailableEnding
+  FROM
+    ITVSTD_O.STD_VC_VOD_CONTENT VOD
+  JOIN
+    ITVSTD_O.STD_VC_VOD_CP CP
+    ON VOD.CNTY_CD = CP.COUNTRY_CD AND VOD.VC_CP_ID = CP.VC_CP_ID
+  WHERE
+    UPPER(VOD.FEED_WORKER) IN
+      <foreach collection="feedWorkers" item="item" open="(" separator="," close=")">
+        UPPER(#{item})
+      </foreach>
+    AND VOD."TYPE" = #{assetType}
+    AND CP."GROUP" = #{countryGroup}
+</select>
+```
+
+#### 6.3 Modify `findLicenseSlotsByProgramId`
+
+Add `currentAvailableStarting` and `currentAvailableEnding` by joining `STD_VC_VOD_CONTENT`. This is the fix for Issue 5 — current values flow naturally through the slot rows, no map needed.
+
+```xml
+<select id="findLicenseSlotsByProgramId"
+    resultType="com.cms.slotupdater.batchprocessor.model.LicenseWindowDto"
+    parameterType="map">
+  SELECT
+    SLOT.PROGRAM_ID            as contentId,
+    SLOT.AVAILABLE_STARTING    as availableStarting,
+    SLOT.EXP_DATE              as availableEnding,
+    VOD.AVAILABLE_STARTING     as currentAvailableStarting,
+    VOD.EXP_DATE               as currentAvailableEnding
+  FROM
+    ITVSTD_O.STD_CMS_VOD_ASSET_LICENSE SLOT
+  JOIN
+    ITVSTD_O.STD_VC_VOD_CONTENT VOD ON SLOT.PROGRAM_ID = VOD.CONTENT_ID
+  WHERE
+    SLOT.PROGRAM_ID IN
+      <foreach collection="programIds" item="programId" open="(" close=")" separator=",">
+        #{programId}
+      </foreach>
+  ORDER BY
+    SLOT.PROGRAM_ID, SLOT.AVAILABLE_STARTING
+</select>
+```
+
+#### 6.4 New — `findShowDeeplinkUpdates`
+
+```xml
+<select id="findShowDeeplinkUpdates"
+    resultType="com.cms.slotupdater.batchprocessor.model.DeeplinkUpdateDto"
+    parameterType="map">
+  SELECT
+    S.CONTENT_ID    AS contentId,
+    S.CNTY_CD       AS countryCode,
+    S.VC_CP_ID      AS providerId,
+    S.DEEPLINK_ID   AS currentDeeplinkId,
+    E.CONTENT_ID    AS newDeeplinkId,
+    E.RATINGS       AS ratings
+  FROM ITVSTD_O.STD_VC_VOD_CONTENT S
+  JOIN (
+    SELECT * FROM (
+      SELECT
+        E.SHOW_ID,
+        E.CONTENT_ID,
+        E.RATINGS,
+        ROW_NUMBER() OVER (
+          PARTITION BY E.SHOW_ID
+          ORDER BY E.SEASON_NO, E.EPISODE_NO
+        ) AS RN
+      FROM ITVSTD_O.STD_VC_VOD_CONTENT E
+      WHERE LOWER(E.TYPE) = 'episode'
+        AND UPPER(E.FEED_WORKER) IN
+          <foreach collection="feedWorkers" item="worker" open="(" separator="," close=")">
+            UPPER(#{worker})
+          </foreach>
+    ) WHERE RN = 1
+  ) E ON S.CONTENT_ID = E.SHOW_ID
+  JOIN ITVSTD_O.STD_VC_VOD_CP CP
+    ON S.CNTY_CD = CP.COUNTRY_CD AND S.VC_CP_ID = CP.VC_CP_ID
+  WHERE LOWER(S."TYPE") = 'show'
+    AND CP."GROUP" = #{countryGroup}
+</select>
+```
+
+#### 6.5 New — `findSeasonDeeplinkUpdates`
+
+Same structure as above, three differences only:
+
+- `PARTITION BY E.SEASON_ID`
+- `ORDER BY E.EPISODE_NO`
+- `ON S.CONTENT_ID = E.SEASON_ID`
+- `WHERE LOWER(S."TYPE") = 'season'`
+
+#### 6.6 New — `updateDeeplinks` (STD_VC_VOD_CONTENT)
+
+```xml
+<update id="updateDeeplinks">
+  <foreach collection="assets" item="asset" open="begin " close=";end;" separator=";">
+    UPDATE ITVSTD_O.STD_VC_VOD_CONTENT
+    SET
+      DEEPLINK_ID      = #{asset.newDeeplinkId, jdbcType=VARCHAR},
+      DEEPLINK_PAYLOAD = #{asset.deeplinkPayload, jdbcType=VARCHAR}
+    WHERE
+      CONTENT_ID = #{asset.contentId, jdbcType=VARCHAR}
+      AND CNTY_CD   = #{asset.countryCode, jdbcType=VARCHAR}
+      AND VC_CP_ID  = #{asset.providerId, jdbcType=VARCHAR}
+  </foreach>
+</update>
+```
+
+#### 6.7 New — `updateDeeplinksCP` (STD_CMS_VOD_CP_CONTENT)
+
+Identical to above, just `STD_CMS_VOD_CP_CONTENT` instead.
 
 ---
 
-### 4. `SlotBatchMapper.java` — Interface changes
-
-- `findAssetWithMultipleSlots` return type: `List<String>` → `List<LicenseWindowDto>`
-- `findAssetByType` return type: `List<String>` → `List<LicenseWindowDto>`
-- Add: `List<DeeplinkUpdateDto> findShowsForDeeplinkSync(int countryGroup, List<String> feedWorkers)`
-- Add: `List<DeeplinkUpdateDto> findSeasonsForDeeplinkSync(int countryGroup, List<String> feedWorkers)`
-- Add: `List<DeeplinkUpdateDto> findFirstEpisodeForShows(@Param("showIds") List<String> showIds, @Param("countryCode") String countryCode)`
-- Add: `List<DeeplinkUpdateDto> findFirstEpisodeForSeasons(@Param("seasonIds") List<String> seasonIds, @Param("countryCode") String countryCode)`
-- Add: `void updateDeeplinks(List<DeeplinkUpdateDto> assets)`
-- Add: `void updateDeeplinksCP(List<DeeplinkUpdateDto> assets)`
-
----
-
-### 5. `LicenseUpdateStrategy` interface — Signature change
-
-`fetchAssetIds` → renamed to `fetchAssets`, return type `List<String>` → `List<LicenseWindowDto>`. All three strategy implementations update accordingly.
-
----
-
-### 6. `LicenseWindowService` — Carry through current values
-
-`findUpdateSlot` — the returned `LicenseWindowDto` must carry `currentAvailableStarting` and `currentAvailableEnding` from the input list's first element (same value on all slots for the same asset).
-
-`findMinStartAndMaxEnd` — same, carry through `currentAvailableStarting` and `currentAvailableEnding` from first element of list.
-
----
-
-### 7. `SlotBatchService` — Core changes
-
-**`executeUpdateStrategy`** — after `processGroupedSlots` returns computed windows, add Java filter before calling `updateWindowsInBatch`:
+### 7. `SlotBatchMapper.java`
 
 ```java
-List<LicenseWindowDto> actualChanges = updateWindows.stream()
-    .filter(w -> !Objects.equals(w.getAvailableStarting(), w.getCurrentAvailableStarting())
-              || !Objects.equals(w.getAvailableEnding(), w.getCurrentAvailableEnding()))
+// Modified return types
+List<LicenseWindowDto> findAssetWithMultipleSlots(
+    @Param("countryGroup") int countryGroup,
+    @Param("feedWorkers") List<String> feedWorkers);
+
+List<LicenseWindowDto> findAssetByType(
+    @Param("countryGroup") int countryGroup,
+    @Param("feedWorkers") List<String> feedWorkers,
+    @Param("assetType") String assetType);
+
+// Unchanged
+List<LicenseWindowDto> findLicenseSlotsByProgramId(List<String> programIds);
+List<LicenseWindowDto> findEpisodeSlotsBySeasonId(List<String> seasonIds);
+List<LicenseWindowDto> findSeasonSlotsByShowId(List<String> showIds);
+void updateAssetLicenseWindow(List<LicenseWindowDto> assets);
+void updateAssetLicenseWindowCP(List<LicenseWindowDto> assets);
+
+// New
+List<DeeplinkUpdateDto> findShowDeeplinkUpdates(
+    @Param("countryGroup") int countryGroup,
+    @Param("feedWorkers") List<String> feedWorkers);
+
+List<DeeplinkUpdateDto> findSeasonDeeplinkUpdates(
+    @Param("countryGroup") int countryGroup,
+    @Param("feedWorkers") List<String> feedWorkers);
+
+void updateDeeplinks(@Param("assets") List<DeeplinkUpdateDto> assets);
+void updateDeeplinksCP(@Param("assets") List<DeeplinkUpdateDto> assets);
+```
+
+---
+
+### 8. `LicenseUpdateStrategy.java`
+
+One change — `fetchAssetIds` return type:
+
+```java
+// FROM:
+List<String> fetchAssetIds(SlotBatchMapper mapper, int countryGroup, List<String> feedWorkers);
+
+// TO:
+List<LicenseWindowDto> fetchAssets(SlotBatchMapper mapper, int countryGroup, List<String> feedWorkers);
+```
+
+All other method signatures that reference `List<String> assetIds` change to `List<LicenseWindowDto> assets`.
+
+---
+
+### 9. Three strategy implementations
+
+Each changes `fetchAssets` to return `List<LicenseWindowDto>` from the mapper. Wherever `assetIds` was used as a list of strings (for `getSlotFetcherFunction`, `getFetchSlotsLogMessage`, `getProcessingLogMessage`, `processGroupedSlots`), extract `contentId` from the DTO:
+
+```java
+// In NonSeasonNonShowUpdateStrategy.fetchAssets:
+return mapper.findAssetWithMultipleSlots(countryGroup, feedWorkers);
+
+// Wherever asset IDs as strings are needed:
+List<String> ids = assets.stream()
+    .map(LicenseWindowDto::getContentId)
     .toList();
-
-log.info("{}: {} fetched, {} need update, {} skipped",
-    operationName, updateWindows.size(), actualChanges.size(),
-    updateWindows.size() - actualChanges.size());
-
-updateWindowsInBatch(actualChanges);
 ```
 
-**`fetchSlotsInBatch`** — remove `CompletableFuture.supplyAsync`. Plain sequential loop on the scheduling thread.
+`processGroupedSlots` in Season and Show strategies fills in missing assets from `assetIds` — this now uses the extracted string IDs the same way as before, just extracted from the DTO list first.
 
-**`updateWindowsInBatch`** — replace unbounded `CompletableFuture.runAsync` with `Semaphore(5)` controlling how many partitions run concurrently against the thread pool.
+---
 
-**`updateBothTables`** — remove `@Transactional`. Replace with `TransactionTemplate` injected into `SlotBatchService`. Wrap the two mapper calls inside `transactionTemplate.execute()`.
+### 10. `LicenseWindowService.java`
 
-**`slotUpdater`** — add two new calls after the three existing strategies:
+Both methods carry through `currentAvailableStarting/Ending` from the input list's first element into the returned DTO.
+
+**`findUpdateSlot`** — at every return point, set current values onto the result:
+
 ```java
-deeplinkSyncService.syncShowDeeplinks(countryGroup, feedWorkerList);
-deeplinkSyncService.syncSeasonDeeplinks(countryGroup, feedWorkerList);
+// All existing return statements change to carry through current values.
+// Example — the direct active slot return:
+LicenseWindowDto result = licenseWindows.get(resInd);
+return LicenseWindowDto.builder()
+    .contentId(result.getContentId())
+    .availableStarting(result.getAvailableStarting())
+    .availableEnding(result.getAvailableEnding())
+    .currentAvailableStarting(licenseWindows.get(0).getCurrentAvailableStarting())
+    .currentAvailableEnding(licenseWindows.get(0).getCurrentAvailableEnding())
+    .partitionCt(result.getPartitionCt())
+    .build();
 ```
-Add timing for both. Add one structured summary log at the end covering all five operations.
+
+Same pattern for the merged window return and the fallback return. All three return points get the same `currentAvailableStarting/Ending` carried through from `licenseWindows.get(0)`.
+
+**`findMinStartAndMaxEnd`** — add current values to the builder:
+
+```java
+return LicenseWindowDto.builder()
+    .availableStarting(minTime)
+    .availableEnding(maxTime)
+    .contentId(licenseWindows.get(0).getContentId())
+    .currentAvailableStarting(licenseWindows.get(0).getCurrentAvailableStarting())
+    .currentAvailableEnding(licenseWindows.get(0).getCurrentAvailableEnding())
+    .partitionCt(licenseWindows.get(0).getPartitionCt())
+    .build();
+```
 
 ---
 
-### 8. New `DeeplinkSyncService`
+### 11. `SlotBatchService.java`
 
-Single responsibility — deeplink sync. Contains `syncShowDeeplinks` and `syncSeasonDeeplinks`. Each method:
+**Inject `TransactionTemplate`:**
+```java
+private final TransactionTemplate transactionTemplate;
+```
 
-1. Fetch all shows/seasons with `currentDeeplinkId` via `findShowsForDeeplinkSync` / `findSeasonsForDeeplinkSync`
-2. Extract IDs, call `findFirstEpisodeForShows` / `findFirstEpisodeForSeasons` in chunks of `batchSize` — sequential, same thread
-3. Build a map of `contentId → (newDeeplinkId, ratings)`
-4. Java filter — keep only assets where:
-   - `currentDeeplinkId` is null, OR
-   - `newDeeplinkId` is null (no episodes exist — skip entirely, don't update), OR
-   - `currentDeeplinkId != newDeeplinkId`
-5. For filtered assets, build `DEEPLINK_PAYLOAD` JSON:
-   ```json
-   {"deeplink_data": {"content_type": "tvshow", "content_id": "<newDeeplinkId>", "series_id": "<contentId>", "ratings": "<episodeRatings>"}}
-   ```
-   Set `newDeeplinkId` and `deeplinkPayload` on each `DeeplinkUpdateDto`
-6. Call `updateDeeplinksInBatch(assets)` — same `Semaphore(5)` + `TransactionTemplate` pattern as license window updates
-7. Log summary: `"Deeplink sync [SHOW/SEASON]: X checked, Y updated, Z skipped, W failed"`
+**`executeUpdateStrategy`** — change `assetIds` from `List<String>` to `List<LicenseWindowDto>`. Extract string IDs where needed. Add filter after `processGroupedSlots`:
+
+```java
+private void executeUpdateStrategy(LicenseUpdateStrategy strategy, String operationName) {
+    log.info(strategy.getLogMessageStart());
+
+    List<LicenseWindowDto> assets = strategy.fetchAssets(slotBatchMapper, countryGroup, feedWorkerList);
+
+    if (CollectionUtils.isEmpty(assets)) {
+        log.info("No assets found for: {}", operationName);
+        return;
+    }
+
+    List<String> assetIds = assets.stream()
+        .map(LicenseWindowDto::getContentId)
+        .toList();
+
+    log.info(strategy.getFetchSlotsLogMessage(assets));
+
+    Function<List<String>, List<LicenseWindowDto>> slotFetcher =
+        strategy.getSlotFetcherFunction(slotBatchMapper);
+    List<LicenseWindowDto> allSlots = fetchSlotsInBatch(assetIds, slotFetcher);
+
+    log.info(strategy.getProcessingLogMessage(assets, allSlots.size()));
+
+    Map<String, List<LicenseWindowDto>> slotsByAsset = allSlots.stream()
+        .collect(Collectors.groupingBy(LicenseWindowDto::getContentId));
+
+    List<LicenseWindowDto> computedWindows = strategy.processGroupedSlots(
+        slotsByAsset, licenseWindowService, assets);
+
+    List<LicenseWindowDto> actualChanges = computedWindows.stream()
+        .filter(w -> !Objects.equals(w.getAvailableStarting(), w.getCurrentAvailableStarting())
+                  || !Objects.equals(w.getAvailableEnding(), w.getCurrentAvailableEnding()))
+        .toList();
+
+    log.info("{}: {} fetched, {} need update, {} skipped",
+        operationName, computedWindows.size(), actualChanges.size(),
+        computedWindows.size() - actualChanges.size());
+
+    updateWindowsInBatch(actualChanges);
+}
+```
+
+**`fetchSlotsInBatch`** — remove `CompletableFuture`, plain sequential loop:
+
+```java
+private List<LicenseWindowDto> fetchSlotsInBatch(
+    List<String> assetIds,
+    Function<List<String>, List<LicenseWindowDto>> slotFetcherFunction) {
+
+    List<LicenseWindowDto> allSlots = new ArrayList<>();
+    for (List<String> partition : ListUtils.partitionList(assetIds, Math.min(1000, batchSize))) {
+        allSlots.addAll(slotFetcherFunction.apply(partition));
+    }
+    return allSlots;
+}
+```
+
+**`updateWindowsInBatch`** — unchanged logic, just now naturally limited to 5 concurrent tasks by the thread pool:
+
+```java
+public void updateWindowsInBatch(List<LicenseWindowDto> updateWindows) {
+    if (CollectionUtils.isEmpty(updateWindows)) {
+        log.info("No windows to update, skipping.");
+        return;
+    }
+
+    log.info("Updating {} assets in batches of {}", updateWindows.size(), batchSize);
+    List<List<LicenseWindowDto>> partitions =
+        ListUtils.partitionLicenseList(updateWindows, batchSize);
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+    for (List<LicenseWindowDto> partition : partitions) {
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            try {
+                log.info("Updating chunk {}", partition.get(0).getPartitionCt());
+                updateBothTables(partition);
+            } catch (Exception ex) {
+                String errDesc = "Partition " + partition.get(0).getPartitionCt();
+                log.error("Error updating {}: {}", errDesc, ErrorMessageUtil.extractError(ex));
+                notificationUtil.sendAlarm(ex,
+                    HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                    String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                    errDesc, " DB Connection Error");
+            }
+        }, taskExecutor);
+        futures.add(future);
+    }
+
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    log.info("All batch updates completed.");
+}
+```
+
+**`updateBothTables`** — remove `@Transactional`, use `TransactionTemplate`:
+
+```java
+public void updateBothTables(List<LicenseWindowDto> assets) {
+    transactionTemplate.executeWithoutResult(status -> {
+        slotBatchMapper.updateAssetLicenseWindow(assets);
+        slotBatchMapper.updateAssetLicenseWindowCP(assets);
+    });
+}
+```
+
+**`slotUpdater`** — add deeplink calls and summary log:
+
+```java
+@Scheduled(fixedRateString = "#{@schedulerConfig.getBatchSchedulerRate()}")
+public void slotUpdater() {
+    log.info("Starting slot updater batch");
+    Instant start = Instant.now();
+
+    try {
+        executeUpdateStrategy(nonSeasonNonShowStrategy,
+            "License Update - Non-Season Non-Show");
+        Instant t1 = Instant.now();
+
+        executeUpdateStrategy(seasonStrategy,
+            "License Update - Season");
+        Instant t2 = Instant.now();
+
+        executeUpdateStrategy(showStrategy,
+            "License Update - Show");
+        Instant t3 = Instant.now();
+
+        deeplinkSyncService.syncShowDeeplinks(countryGroup, feedWorkerList);
+        Instant t4 = Instant.now();
+
+        deeplinkSyncService.syncSeasonDeeplinks(countryGroup, feedWorkerList);
+        Instant end = Instant.now();
+
+        logExecutionTime("License Update - Non-Season Non-Show", start, t1);
+        logExecutionTime("License Update - Season", t1, t2);
+        logExecutionTime("License Update - Show", t2, t3);
+        logExecutionTime("Deeplink Sync - Show", t3, t4);
+        logExecutionTime("Deeplink Sync - Season", t4, end);
+        logExecutionTime("Total Batch", start, end);
+
+    } catch (Exception ex) {
+        String errMsg = "Batch failed: " + ErrorMessageUtil.extractError(ex);
+        notificationUtil.sendAlarm(ex,
+            HttpStatus.INTERNAL_SERVER_ERROR.name(),
+            String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+            errMsg, " Batch job failed");
+        log.error(errMsg);
+    }
+
+    log.info("Batch completed. Group ID: {}", countryGroup);
+}
+```
 
 ---
 
-### 9. `application.properties`
+### 12. New `DeeplinkSyncService.java`
 
-Change `spring.datasource.hikari.maxLifetime` from `2000000` to `600000` to match ECS.
+```java
+@Service
+@Slf4j
+public class DeeplinkSyncService {
+
+    private static final String DEEPLINK_BODY_START = "{\"deeplink_data\":";
+    private static final String DEEPLINK_BODY_END = "}";
+
+    private final SlotBatchMapper slotBatchMapper;
+    private final TransactionTemplate transactionTemplate;
+    private final NotificationUtil notificationUtil;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${BATCH_SIZE:1000}")
+    private int batchSize;
+
+    public void syncShowDeeplinks(int countryGroup, List<String> feedWorkers) {
+        log.info("Starting SHOW deeplink sync");
+
+        List<DeeplinkUpdateDto> all =
+            slotBatchMapper.findShowDeeplinkUpdates(countryGroup, feedWorkers);
+
+        List<DeeplinkUpdateDto> stale = all.stream()
+            .filter(u -> u.getNewDeeplinkId() != null)
+            .filter(u -> !Objects.equals(u.getCurrentDeeplinkId(), u.getNewDeeplinkId()))
+            .peek(u -> u.setDeeplinkPayload(buildPayload(u)))
+            .toList();
+
+        updateDeeplinksInBatch(stale);
+
+        log.info("SHOW deeplink sync: {} checked, {} updated, {} skipped",
+            all.size(), stale.size(), all.size() - stale.size());
+    }
+
+    public void syncSeasonDeeplinks(int countryGroup, List<String> feedWorkers) {
+        log.info("Starting SEASON deeplink sync");
+
+        List<DeeplinkUpdateDto> all =
+            slotBatchMapper.findSeasonDeeplinkUpdates(countryGroup, feedWorkers);
+
+        List<DeeplinkUpdateDto> stale = all.stream()
+            .filter(u -> u.getNewDeeplinkId() != null)
+            .filter(u -> !Objects.equals(u.getCurrentDeeplinkId(), u.getNewDeeplinkId()))
+            .peek(u -> u.setDeeplinkPayload(buildPayload(u)))
+            .toList();
+
+        updateDeeplinksInBatch(stale);
+
+        log.info("SEASON deeplink sync: {} checked, {} updated, {} skipped",
+            all.size(), stale.size(), all.size() - stale.size());
+    }
+
+    private void updateDeeplinksInBatch(List<DeeplinkUpdateDto> updates) {
+        if (CollectionUtils.isEmpty(updates)) {
+            log.info("No deeplink updates needed.");
+            return;
+        }
+
+        List<List<DeeplinkUpdateDto>> partitions =
+            ListUtils.partitionList(updates, batchSize);
+
+        for (List<DeeplinkUpdateDto> partition : partitions) {
+            try {
+                transactionTemplate.executeWithoutResult(status -> {
+                    slotBatchMapper.updateDeeplinks(partition);
+                    slotBatchMapper.updateDeeplinksCP(partition);
+                });
+                log.info("Updated {} deeplinks", partition.size());
+            } catch (Exception ex) {
+                log.error("Error updating deeplinks: {}", ErrorMessageUtil.extractError(ex));
+                notificationUtil.sendAlarm(ex,
+                    HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                    String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                    "Deeplink batch update failed");
+            }
+        }
+    }
+
+    private String buildPayload(DeeplinkUpdateDto u) {
+        try {
+            DeeplinkPayloadDto payload = DeeplinkPayloadDto.builder()
+                .contentType("tvshow")
+                .contentId(u.getNewDeeplinkId())
+                .seriesId(u.getContentId())
+                .ratings(StringUtils.defaultIfBlank(u.getRatings(), ""))
+                .build();
+            return DEEPLINK_BODY_START + objectMapper.writeValueAsString(payload) + DEEPLINK_BODY_END;
+        } catch (JsonProcessingException e) {
+            log.error("Failed to build deeplink payload for contentId {}: {}",
+                u.getContentId(), e.getMessage());
+            throw new RuntimeException("Deeplink payload build failed for " + u.getContentId(), e);
+        }
+    }
+}
+```
 
 ---
 
-### Files touched — complete list
+## Summary of All Files
 
-| File | Type |
+| File | Change |
 |---|---|
-| `LicenseWindowDto` | Add 2 fields |
-| `DeeplinkUpdateDto` | New |
-| `SlotBatchMapper.xml` | 2 query changes, 6 new queries |
-| `SlotBatchMapper.java` | 2 return type changes, 6 new methods |
-| `LicenseUpdateStrategy` | Signature change |
-| `NonSeasonNonShowUpdateStrategy` | Updated signature |
-| `SeasonUpdateStrategy` | Updated signature |
-| `ShowUpdateStrategy` | Updated signature |
-| `LicenseWindowService` | Carry through current values |
-| `SlotBatchService` | Filter, sequential fetch, Semaphore, TransactionTemplate, deeplink calls, summary log |
-| `DeeplinkSyncService` | New |
-| `application.properties` | Fix maxLifetime |
+| `ThreadPoolConfig.java` | corePoolSize 20→5, maxPoolSize 50→5 |
+| `application.properties` | maxLifetime 2000000→600000 |
+| `LicenseWindowDto.java` | Add `currentAvailableStarting`, `currentAvailableEnding` |
+| `DeeplinkPayloadDto.java` | New — 4 fields |
+| `DeeplinkUpdateDto.java` | New — 7 fields |
+| `SlotBatchMapper.xml` | Modify 3 queries, add 4 new queries |
+| `SlotBatchMapper.java` | 2 return type changes, 4 new methods |
+| `LicenseUpdateStrategy.java` | `fetchAssetIds` → `fetchAssets`, return `List<LicenseWindowDto>` |
+| `NonSeasonNonShowUpdateStrategy.java` | Updated signature + extract string IDs |
+| `SeasonUpdateStrategy.java` | Updated signature + extract string IDs |
+| `ShowUpdateStrategy.java` | Updated signature + extract string IDs |
+| `LicenseWindowService.java` | Carry current values through all return points |
+| `SlotBatchService.java` | Filter, sequential fetch, TransactionTemplate, deeplink calls, timing |
+| `DeeplinkSyncService.java` | New — sequential deeplink sync |
 
----
-
-Does this look right to you? Ready to start writing code?
+Ready to implement?
