@@ -1,4 +1,3 @@
-**# CurationPilot
 ## AI-Assisted Portal Workflow Automation
 ### Complete Architecture & Product Plan — Final
 
