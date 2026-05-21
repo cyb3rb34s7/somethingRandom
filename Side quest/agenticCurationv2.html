@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Curation Portal</title>
+
+<style>
+
+:root{
+    --bg:#0b0b0b;
+    --surface:#161616;
+    --surface2:#1f1f1f;
+    --text:#ffffff;
+    --muted:#9e9e9e;
+    --green:#00d68f;
+    --purple:#7d5fff;
+    --border:#2d2d2d;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:Segoe UI,Arial,sans-serif;
+    overflow-x:hidden;
+}
+
+/* ==========================
+   HEADER
+========================== */
+
+.header{
+    position:sticky;
+    top:0;
+    z-index:999;
+    background:#101010;
+    border-bottom:1px solid #202020;
+    padding:18px 40px;
+}
+
+.header-inner{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.portal-title{
+    font-size:32px;
+    font-weight:700;
+}
+
+.portal-subtitle{
+    margin-top:4px;
+    color:var(--muted);
+}
+
+.stats{
+    display:flex;
+    gap:14px;
+}
+
+.stat{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 18px;
+    text-align:center;
+}
+
+.stat-value{
+    font-size:20px;
+    font-weight:700;
+}
+
+.stat-label{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:2px;
+}
+
+/* ==========================
+   AI BANNER
+========================== */
+
+.hero{
+    margin:30px 40px;
+    border-radius:18px;
+    overflow:hidden;
+
+    background:
+    linear-gradient(
+        90deg,
+        rgba(0,0,0,.9),
+        rgba(0,0,0,.4)
+    ),
+    url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1800');
+
+    background-size:cover;
+    background-position:center;
+
+    min-height:260px;
+
+    display:flex;
+    align-items:center;
+}
+
+.hero-content{
+    padding:40px;
+    max-width:700px;
+}
+
+.ai-tag{
+    display:inline-block;
+    padding:6px 12px;
+    background:var(--green);
+    color:#000;
+    font-weight:700;
+    border-radius:999px;
+    margin-bottom:16px;
+}
+
+.hero-title{
+    font-size:38px;
+    font-weight:700;
+    margin-bottom:12px;
+}
+
+.hero-text{
+    color:#d2d2d2;
+    line-height:1.6;
+}
+
+.hero-actions{
+    margin-top:20px;
+    display:flex;
+    gap:10px;
+}
+
+.btn{
+    border:none;
+    cursor:pointer;
+    padding:10px 16px;
+    border-radius:10px;
+    font-weight:600;
+}
+
+.btn-primary{
+    background:var(--green);
+    color:#000;
+}
+
+.btn-secondary{
+    background:#252525;
+    color:#fff;
+}
+
+/* ==========================
+   ROWS
+========================== */
+
+.row{
+    margin-bottom:40px;
+}
+
+.row-header{
+    padding:0 40px 14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.row-left{
+    display:flex;
+    align-items:center;
+    gap:14px;
+}
+
+.row-title{
+    font-size:28px;
+    font-weight:600;
+}
+
+.row-count{
+    color:var(--muted);
+}
+
+.row-actions{
+    display:flex;
+    gap:10px;
+}
+
+.row-btn{
+    background:#1d1d1d;
+    border:1px solid var(--border);
+    color:white;
+    border-radius:10px;
+    padding:10px 14px;
+    cursor:pointer;
+}
+
+.cards{
+    display:flex;
+    gap:20px;
+    overflow-x:auto;
+    padding:20px 40px 40px;
+    scrollbar-width:none;
+    scroll-behavior:smooth;
+}
+
+.cards::-webkit-scrollbar{
+    display:none;
+}
+
+/* ==========================
+   CARD
+========================== */
+
+.card{
+    width:360px;
+    flex:0 0 auto;
+
+    background:var(--surface);
+    border-radius:16px;
+    overflow:hidden;
+
+    border:2px solid transparent;
+
+    transition:.2s ease;
+
+    position:relative;
+}
+
+.card:hover{
+    transform:translateY(-6px);
+}
+
+.card-image{
+    height:205px;
+    width:100%;
+    object-fit:cover;
+    display:block;
+}
+
+.drag{
+    position:absolute;
+    right:12px;
+    top:12px;
+
+    background:rgba(0,0,0,.65);
+
+    padding:6px 10px;
+    border-radius:8px;
+
+    font-size:14px;
+}
+
+.card-body{
+    padding:14px;
+}
+
+.title{
+    font-size:18px;
+    font-weight:700;
+}
+
+.umd{
+    color:var(--muted);
+    margin-top:5px;
+    font-size:13px;
+}
+
+.genre{
+    margin-top:10px;
+    color:#d0d0d0;
+    font-size:13px;
+}
+
+.chips{
+    margin-top:12px;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.chip{
+    border-radius:999px;
+    padding:5px 10px;
+    font-size:12px;
+}
+
+.ai-chip{
+    background:#17382d;
+    color:#89ffd1;
+}
+
+.reason-chip{
+    background:#2f2148;
+    color:#d9b7ff;
+}
+
+.actions{
+    margin-top:14px;
+    display:flex;
+    gap:8px;
+}
+
+.small-btn{
+    flex:1;
+    background:#202020;
+    color:white;
+    border:none;
+    padding:8px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+/* ==========================
+   ADD CARD
+========================== */
+
+.add-card{
+    width:360px;
+    flex:0 0 auto;
+
+    min-height:330px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+
+    border-radius:16px;
+    border:2px dashed #444;
+
+    background:#131313;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.add-card:hover{
+    transform:translateY(-6px);
+    border-color:white;
+}
+
+.plus{
+    font-size:72px;
+    line-height:1;
+}
+
+.add-label{
+    margin-top:10px;
+    font-size:18px;
+    font-weight:600;
+}
+
+/* ==========================
+   FOCUS MODE (TV)
+========================== */
+
+.focused{
+    transform:translateY(-8px) scale(1.03);
+    border-color:white !important;
+
+    box-shadow:
+        0 0 0 2px rgba(255,255,255,.15),
+        0 10px 30px rgba(255,255,255,.18);
+
+    z-index:99;
+}
+
+/* ==========================
+   FOOTER
+========================== */
+
+.footer{
+    height:50px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="header-inner">
+
+        <div>
+
+            <div class="portal-title">
+                Agentic Curation Portal
+            </div>
+
+            <div class="portal-subtitle">
+                AI-assisted TV Content Curation Workspace
+            </div>
+
+        </div>
+
+        <div class="stats">
+
+            <div class="stat">
+                <div class="stat-value">4</div>
+                <div class="stat-label">RAILS</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-value">20</div>
+                <div class="stat-label">TITLES</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-value">96%</div>
+                <div class="stat-label">AI QUALITY</div>
+            </div>
+
+        </div>
+
+    </div>
+
+</header>
+
+<section class="hero">
+
+    <div class="hero-content">
+
+        <div class="ai-tag">
+            AI RECOMMENDATION
+        </div>
+
+        <div class="hero-title">
+            Prime-Time Discovery Optimization
+        </div>
+
+        <div class="hero-text">
+            Sci-Fi engagement is up 34%.
+            Action content is up 18%.
+            Recommended actions:
+            Promote Kalki 2898 AD,
+            increase RRR visibility,
+            and expand Family Audience rails.
+        </div>
+
+        <div class="hero-actions">
+            <button class="btn btn-primary">
+                Apply Recommendations
+            </button>
+
+            <button class="btn btn-secondary">
+                View Insights
+            </button>
+        </div>
+
+    </div>
+
+</section>
+
+<div id="rowsContainer"></div>
+
+<div class="footer"></div>
+
+<script>
+
+const rows = [
+
+{
+title:"Trending Movies In India",
+items:[
+["Jurassic Park","UMD-10001","Adventure","Trending +24%"],
+["Kalki 2898 AD","UMD-10002","Sci-Fi","Prime-Time Pick"],
+["RRR","UMD-10003","Action","High Completion"],
+["Pushpa","UMD-10004","Drama","Viral Growth"],
+["Pathaan","UMD-10005","Thriller","Returning Favorite"]
+]
+},
+
+{
+title:"Trending Shows",
+items:[
+["Anupama","UMD-20001","Drama","High Search Volume"],
+["TMKOC","UMD-20002","Comedy","Family Audience"],
+["Panchayat","UMD-20003","Comedy","Trending +12%"],
+["Mirzapur","UMD-20004","Crime","Prime-Time Pick"],
+["The Family Man","UMD-20005","Thriller","High Completion"]
+]
+},
+
+{
+title:"Most Searched Content",
+items:[
+["Hanuman Chalisa","UMD-30001","Devotional","High Search Volume"],
+["Game Of Thrones","UMD-30002","Fantasy","Trending +31%"],
+["Jurassic Park","UMD-30003","Adventure","Returning Favorite"],
+["Anupama","UMD-30004","Drama","Family Audience"],
+["TMKOC Specials","UMD-30005","Comedy","Viral Growth"]
+]
+},
+
+{
+title:"IMDb Top Rated Indian Movies",
+items:[
+["3 Idiots","UMD-40001","Comedy","Classic Favorite"],
+["Dangal","UMD-40002","Drama","High Completion"],
+["Drishyam","UMD-40003","Thriller","Prime-Time Pick"],
+["Sholay","UMD-40004","Classic","Legacy Content"],
+["Lagaan","UMD-40005","Drama","Returning Favorite"]
+]
+}
+
+];
+
+const images = [
+
+"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200",
+"https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200",
+"https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=1200",
+"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200",
+"https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200"
+
+];
+
+const container =
+document.getElementById('rowsContainer');
+
+rows.forEach(row=>{
+
+let html = `
+
+<div class="row">
+
+<div class="row-header">
+
+<div class="row-left">
+
+<div class="row-title">
+${row.title}
+</div>
+
+<div class="row-count">
+${row.items.length} Titles
+</div>
+
+</div>
+
+<div class="row-actions">
+
+<button class="row-btn">
+AI Refresh
+</button>
+
+<button class="row-btn">
+Re-rank
+</button>
+
+<button class="row-btn">
+Edit Rail
+</button>
+
+</div>
+
+</div>
+
+<div class="cards">
+`;
+
+row.items.forEach((item,index)=>{
+
+html += `
+
+<div class="card">
+
+<img
+class="card-image"
+src="${images[index % images.length]}"
+>
+
+<div class="drag">
+⋮⋮
+</div>
+
+<div class="card-body">
+
+<div class="title">
+${item[0]}
+</div>
+
+<div class="umd">
+${item[1]}
+</div>
+
+<div class="genre">
+${item[2]}
+</div>
+
+<div class="chips">
+
+<span class="chip ai-chip">
+AI ${96-index}
+</span>
+
+<span class="chip reason-chip">
+${item[3]}
+</span>
+
+</div>
+
+<div class="actions">
+
+<button class="small-btn">
+Preview
+</button>
+
+<button class="small-btn">
+Details
+</button>
+
+<button class="small-btn">
+Remove
+</button>
+
+</div>
+
+</div>
+
+</div>
+`;
+});
+
+html += `
+
+<div class="add-card">
+
+<div class="plus">+</div>
+
+<div class="add-label">
+Add Content
+</div>
+
+</div>
+
+</div>
+</div>
+`;
+
+container.insertAdjacentHTML(
+'beforeend',
+html
+);
+
+});
+
+/* ==========
+TV NAVIGATION
+========== */
+
+const focusables = [
+...document.querySelectorAll(
+'.card,.add-card'
+)
+];
+
+let current = 0;
+
+function updateFocus(){
+
+focusables.forEach(el=>{
+el.classList.remove('focused');
+});
+
+focusables[current]
+.classList.add('focused');
+
+focusables[current]
+.scrollIntoView({
+behavior:'smooth',
+inline:'center',
+block:'nearest'
+});
+
+}
+
+updateFocus();
+
+document.addEventListener(
+'keydown',
+e=>{
+
+if(e.key==='ArrowRight'){
+current=Math.min(
+current+1,
+focusables.length-1
+);
+}
+
+if(e.key==='ArrowLeft'){
+current=Math.max(
+current-1,
+0
+);
+}
+
+updateFocus();
+
+}
+);
+
+</script>
+
+</body>
+</html>
